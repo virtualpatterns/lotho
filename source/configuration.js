@@ -79,7 +79,7 @@ const configurationPrototype = {
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-task.log`
   },
   'test': {
-    'logLevel': 'debug',
+    'logLevel': 'trace',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-test.log`,
     'parameter': {
       'index': {}

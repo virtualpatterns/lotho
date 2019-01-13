@@ -297,7 +297,7 @@ describe('archive', () => {
 
   describe('startSchedule()', () => {
 
-    describe('(with an empty source)', () => {
+    describe.only('(with an empty source)', () => {
 
       let rootPath = 'resource/test/archive/empty'
       let sourcePath = `${rootPath}/source`

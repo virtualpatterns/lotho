@@ -213,6 +213,7 @@ archivePrototype.onScheduled = async function () {
 
   try {
 
+    await FileSystem.mkdir(Path.dirname(this.lockPath), { 'recursive': true })
     await FileSystem.writeFile(this.lockPath, '', { 'encoding': 'utf8', 'flag': 'wx' })
 
     Log.debug(Configuration.line)
