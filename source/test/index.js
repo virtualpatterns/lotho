@@ -68,7 +68,7 @@ describe('index', () => {
      
   })
 
-  describe.skip('(when passing \'start\')', () => {
+  describe('(when passing \'start\')', () => {
 
     let code = null
 
@@ -97,9 +97,9 @@ describe('index', () => {
 
     })
 
-    // it('should exit with 0', () => {
-    //   Assert.equal(code, 0)
-    // })
+    it('should exit with 0', () => {
+      Assert.equal(code, 0)
+    })
 
     it('should create the content directory', () => {
       return FileSystem.whenFileExists(1000, 15000, `${targetPath}/content`)
