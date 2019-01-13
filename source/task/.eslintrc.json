@@ -1,0 +1,8 @@
+{
+  "globals": {
+    "complete": true,
+    "desc": true,
+    "namespace": true,
+    "task": true
+  }
+}

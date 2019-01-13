@@ -1,0 +1,3 @@
+describe('library', () => {
+  require('./archive')
+})

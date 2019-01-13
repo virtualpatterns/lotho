@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SCRIPT_PATH="$0"
+DIRTY_FILES_PATH="$SCRIPT_PATH.$HOSTNAME"
+
+find . -name "*.bts" > "$DIRTY_FILES_PATH"
+
+NUMBER_OF_DIRTY_FILES=$(cat "$DIRTY_FILES_PATH" | wc -l | sed 's/^ *//')
+
+if [ $NUMBER_OF_DIRTY_FILES -gt 0 ]
+then
+  cat "$DIRTY_FILES_PATH"
+else
+  rm "$DIRTY_FILES_PATH"
+fi
+
+echo "$NUMBER_OF_DIRTY_FILES dirty file(s) found."
+
+exit $NUMBER_OF_DIRTY_FILES
