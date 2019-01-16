@@ -21,7 +21,7 @@ describe('archive', () => {
       },
       'range': {
         'progressInSeconds':  {
-          'minimum': 1.0
+          'minimum': 0.0
         }
       }
     })
@@ -41,8 +41,8 @@ describe('archive', () => {
         result = await Archive.createArchive(sourcePath, targetPath).runOnce()
       })
 
-      it('should create the content directory', () => {
-        return FileSystem.access(`${targetPath}/content`, FileSystem.F_OK)
+      it('should create the content directory', async () => {
+        Assert.isTrue(await FileSystem.pathExists(`${targetPath}/content`))
       })
 
       it('should have created 1 path', () => {
@@ -93,6 +93,35 @@ describe('archive', () => {
 
       after(() => {
         return FileSystem.remove(`${targetPath}/content`)
+      })
+
+    })
+
+    describe.skip('(with a hidden directory in source and a remote target)', () => {
+
+      let rootPath = 'resource/test/archive/hidden'
+      let sourcePath = `${rootPath}/source`
+      let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE/${rootPath}/target`
+
+      let result = null
+
+      before(async () => {
+
+        let archive = Archive.createArchive(sourcePath, targetPath)
+        result = await archive.runOnce()
+
+        await wait(1000)
+
+        result = await archive.runOnce()
+
+      })
+
+      it('should have created 0 paths', () => {
+        Assert.equal(result.statistics.countOfCreated, 0)
+      })
+
+      it('should have updated 0 paths', () => {
+        Assert.equal(result.statistics.countOfUpdated, 0)
       })
 
     })

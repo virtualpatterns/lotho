@@ -20,31 +20,11 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Sandbox Archive",
-      "program": "${workspaceFolder}/distributable/sandbox/archive.js",
-      "preLaunchTask": "Build",
-      "args": [],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch Sandbox Statistics",
-      "program": "${workspaceFolder}/distributable/sandbox/statistics.js",
-      "preLaunchTask": "Build",
-      "args": [],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch Start",
+      "name": "Launch Kill",
       "program": "${workspaceFolder}/distributable/lotho.js",
       "preLaunchTask": "Build",
       "args": [
-        "start"
+        "kill-process-manager"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "openOnSessionStart"

@@ -1,9 +1,8 @@
 import { Duration, DateTime } from 'luxon'
 import Is from '@pwn/is'
 import Merge from 'deepmerge'
-import Moment from 'moment-timezone'
 import OS from 'os'
-import { Path, Process } from '@virtualpatterns/mablung'
+import { Process } from '@virtualpatterns/mablung'
 
 const MILLISECONDS_PER_SECOND = 1000
 const NANOSECONDS_PER_SECOND = 1000000000
@@ -63,8 +62,7 @@ const configurationPrototype = {
     'countOfScanned': /number of files: ([\d,]+)/im, // Number of files: 10,277 (reg: 9,432, dir: 845)
     'countOfCreated': /number of created files: ([\d,]+)/im, // Number of created files: 10,277 (reg: 9,432, dir: 845)
     'countOfUpdated': /number of regular files transferred: ([\d,]+)/im, // Number of regular files transferred: 9,432
-    'countOfDeleted': /number of deleted files: ([\d,]+)/im, // Number of deleted files: 0
-    'sumOfBytes': /sent ([\d,]+) bytes\s+received ([\d,]+) bytes\s+([\d,\\.]+) bytes\/sec/im // sent 259,761,968 bytes  received 212,802 bytes  14,855,701.14 bytes/sec
+    'countOfDeleted': /number of deleted files: ([\d,]+)/im // Number of deleted files: 0
   },
   'range': {
     'progressInSeconds':  {
@@ -72,8 +70,7 @@ const configurationPrototype = {
       'maximum': Infinity
     }
   },
-  'schedule': '0 0 */1 * * *', // Every hour at 0 seconds and 0 minutes past the hour
-  'timeZone': Moment.tz.guess(),
+  'schedule': '0 0 */1 * * *',
   'task': {
     'logLevel': 'debug',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-task.log`
@@ -82,11 +79,10 @@ const configurationPrototype = {
     'logLevel': 'debug',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-test.log`,
     'parameter': {
-      'index': {}
+      'lotho': {}
     },
     'path': {
-      'configuration': Path.normalize(`${__dirname}/../resource/source/configuration.json`),
-      'index': 'distributable/index.js'
+      'lotho': 'distributable/lotho.js'
     }
   }
 }

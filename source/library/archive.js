@@ -166,15 +166,13 @@ archivePrototype.runOnce = function () {
             
             let statistics = Archive.getStatistics(stdout)
 
-            Log.debug(`Scanned ${statistics.countOfScanned} directories and files`)
-            Log.debug(`Created ${statistics.countOfCreated} directories and files`)
-            Log.debug(`Updated ${statistics.countOfUpdated} files`)
+            Log.debug(`Scanned: ${statistics.countOfScanned}`)
+            Log.debug(`Created: ${statistics.countOfCreated}`)
+            Log.debug(`Updated: ${statistics.countOfUpdated}`)
 
             if (statistics.countOfDeleted) {
-              Log.debug(`Deleted ${statistics.countOfDeleted} directories and files`)
+              Log.debug(`Deleted: ${statistics.countOfDeleted}`)
             }
-
-            Log.debug(`Sent ${statistics.sumOfBytes.sumOfBytesSent} bytes and received ${statistics.sumOfBytes.sumOfBytesReceived} bytes`)
   
             isResolved = true
             resolve({ stamp, statistics })
@@ -280,8 +278,7 @@ Archive.getStatistics = function (stdout) {
     'countOfScanned': this.getCountOfScanned(stdout),
     'countOfCreated': this.getCountOfCreated(stdout),
     'countOfUpdated': this.getCountOfUpdated(stdout),
-    'countOfDeleted': this.getCountOfDeleted(stdout),
-    'sumOfBytes': this.getSumOfBytes(stdout)
+    'countOfDeleted': this.getCountOfDeleted(stdout)
   }
 
 }
@@ -355,31 +352,6 @@ Archive.getCountOfDeleted = function (stdout) {
   }
 
   return null
-
-}
-
-Archive.getSumOfBytes = function (stdout) {
-
-  let pattern = Configuration.pattern.sumOfBytes
-  let match = null
-
-  if (Is.not.null(match = pattern.exec(stdout))) {
-  
-    let [ , sumOfBytesSentAsString, sumOfBytesReceivedAsString ] = match
-    let sumOfBytesSent = parseInt(sumOfBytesSentAsString.replace(/,/g, ''))
-    let sumOfBytesReceived = parseInt(sumOfBytesReceivedAsString.replace(/,/g, ''))
-
-    return {
-      sumOfBytesSent,
-      sumOfBytesReceived
-    }
-
-  }
-
-  return {
-    'sumOfBytesSent': null,
-    'sumOfBytesReceived': null
-  }
 
 }
 
