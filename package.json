@@ -1,7 +1,8 @@
 {
   "author": "virtualpatterns.com <code@virtualpatterns.com> (http://www.virtualpatterns.com)",
   "bin": {
-    "lotho": "distributable/lotho.js"
+    "lotho": "distributable/lotho.js",
+    "lotho-process-manager": "node_modules/pm2/bin/pm2"
   },
   "description": "TBD",
   "files": [
@@ -9,12 +10,9 @@
     "distributable/configuration.js",
     "distributable/configuration.js.map",
     "distributable/lotho.js",
-    "distributable/lotho.js.map",
-    "distributable/lotho-start.js",
-    "distributable/lotho-start.js.map"
+    "distributable/lotho.js.map"
   ],
   "license": "GPL-3.0+",
-  "main": "distributable/lotho.js",
   "name": "@virtualpatterns/lotho",
   "repository": {
     "type": "git",
@@ -31,7 +29,7 @@
     "jake": "npm run build-jake && jake",
     "build-all": "npm run build-jake && jake build"
   },
-  "version": "0.0.3",
+  "version": "0.0.4-66",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",

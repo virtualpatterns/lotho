@@ -8,6 +8,7 @@ Source.install({ 'handleUncaughtExceptions': false })
 
 Log.createFormattedLog({ 'level': Configuration.test.logLevel }, Configuration.test.logPath)
 
-require('./library/index')
+require('./library/archive')
+require('./library/process-manager')
 require('./configuration')
 require('./lotho')

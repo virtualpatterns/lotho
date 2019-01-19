@@ -62,40 +62,27 @@ Command
     })
   })
 
-Command
-  .command('status-archive')
-  .description('Log the status of the schedule')
-  .action(() => {
-    return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('status-archive')
-      Log.debug(Configuration.line)
-      return ProcessManager.logStatusOfArchive()
-    })
-  })
-
-Command
-  .command('stop-archive')
-  .description('Stop the schedule (the process manager remains running)')
-  .action(() => {
-    return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('stop-archive')
-      Log.debug(Configuration.line)
-      return ProcessManager.stopArchive()
-    })
-  })
+// Command
+//   .command('status-archive')
+//   .description('Log the status of the schedule')
+//   .action(() => {
+//     return Command.execute(() => {
+//       Log.debug(Configuration.line)
+//       Log.debug('status-archive')
+//       Log.debug(Configuration.line)
+//       return ProcessManager.logStatusOfArchive()
+//     })
+//   })
 
 // Command
-//   .command('kill-process-manager')
-//   .description('Stop the process manager (the schedule is stopped as well)')
+//   .command('stop-archive')
+//   .description('Stop the schedule (the process manager remains running)')
 //   .action(() => {
-//     return Command.execute(async () => {
+//     return Command.execute(() => {
 //       Log.debug(Configuration.line)
-//       Log.debug('kill-process-manager')
+//       Log.debug('stop-archive')
 //       Log.debug(Configuration.line)
-//       await ProcessManager.kill()
-//       // Process.exit(0)
+//       return ProcessManager.stopArchive()
 //     })
 //   })
 
@@ -110,34 +97,17 @@ Command.execute = async function (fn) {
     
   try {
 
-    Configuration.path.configuration = Command.configurationPath || Configuration.path.configuration
+    let configurationPath = Command.configurationPath || Configuration.path.configuration
 
     try {
-      await FileSystem.access(Configuration.path.configuration, FileSystem.F_OK)
+      await FileSystem.access(configurationPath, FileSystem.F_OK)
     }
     catch (error) {
-
-      let configuration = {
-        'path': {
-          'source': [ 
-            `${Process.env.HOME}/.lotho`
-          ],
-          'target': `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${Configuration.computerName}`,
-          'exclude': [
-            '.DS_Store',
-            '.localized',
-            'Icon\\#015'
-          ]
-        },
-        'schedule': '0 0 */1 * * *' // At 0 seconds and 0 minutes every hour
-      }
-
-      await FileSystem.mkdir(Path.dirname(Configuration.path.configuration), { 'recursive': true })
-      await FileSystem.writeJson(Configuration.path.configuration, configuration, { 'encoding': 'utf-8', 'spaces': 2 })
-
+      await FileSystem.mkdir(Path.dirname(configurationPath), { 'recursive': true })
+      await FileSystem.writeJson(configurationPath, Configuration.default, { 'encoding': 'utf-8', 'spaces': 2 })
     }
 
-    Configuration.merge()
+    Configuration.merge(configurationPath)
 
     Configuration.logPath = Command.logPath || Configuration.logPath
     Configuration.logLevel = Command.logLevel || Configuration.logLevel

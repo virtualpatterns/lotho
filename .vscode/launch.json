@@ -20,12 +20,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Kill",
-      "program": "${workspaceFolder}/distributable/lotho.js",
+      "name": "Launch Sandbox Startup",
+      "program": "${workspaceFolder}/distributable/sandbox/startup.js",
       "preLaunchTask": "Build",
-      "args": [
-        "kill-process-manager"
-      ],
+      "args": [],
       "console": "integratedTerminal",
       "internalConsoleOptions": "openOnSessionStart"
     }

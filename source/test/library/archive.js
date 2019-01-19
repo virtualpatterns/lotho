@@ -4,12 +4,6 @@ import { FileSystem, Path } from '@virtualpatterns/mablung'
 import Archive from '../../library/archive'
 import Configuration from '../../configuration'
 
-const wait = function(milliseconds) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds)
-  })
-}
-
 describe('archive', () => {
 
   before(() => {
@@ -29,16 +23,24 @@ describe('archive', () => {
 
   describe('runOnce()', () => {
 
+    let wait = function(milliseconds) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, milliseconds)
+      })
+    }      
+
     describe('(with an empty source)', () => {
 
-      let rootPath = 'resource/test/archive/empty'
+      let rootPath = 'resource/test/library/archive/empty'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
       })
 
       it('should create the content directory', async () => {
@@ -65,14 +67,16 @@ describe('archive', () => {
 
     describe('(with a file in source)', () => {
 
-      let rootPath = 'resource/test/archive/single'
+      let rootPath = 'resource/test/library/archive/single'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
       })
 
       it('should create the file', async () => {
@@ -99,15 +103,17 @@ describe('archive', () => {
 
     describe.skip('(with a hidden directory in source and a remote target)', () => {
 
-      let rootPath = 'resource/test/archive/hidden'
+      let rootPath = 'resource/test/library/archive/hidden'
       let sourcePath = `${rootPath}/source`
       let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE/${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath)
+        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
         result = await archive.runOnce()
 
         await wait(1000)
@@ -128,15 +134,17 @@ describe('archive', () => {
 
     describe('(with an updated file in source)', () => {
 
-      let rootPath = 'resource/test/archive/updated'
+      let rootPath = 'resource/test/library/archive/updated'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath)
+        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -177,15 +185,17 @@ describe('archive', () => {
 
     describe('(with a deleted file in source)', () => {
 
-      let rootPath = 'resource/test/archive/deleted'
+      let rootPath = 'resource/test/library/archive/deleted'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath)
+        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -222,15 +232,16 @@ describe('archive', () => {
 
     describe('(with an excluded file in source)', () => {
 
-      let rootPath = 'resource/test/archive/excluded'
+      let rootPath = 'resource/test/library/archive/excluded'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = 'b.txt'
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
       })
 
       it('should create the not excluded file', async () => {
@@ -261,16 +272,17 @@ describe('archive', () => {
 
     describe('(with an excluded file in target)', () => {
 
-      let rootPath = 'resource/test/archive/excluded'
+      let rootPath = 'resource/test/library/archive/excluded'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = 'b.txt'
+      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath).runOnce()
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, [], schedule).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
       })
 
       it('should delete the excluded file', async () => {
@@ -304,12 +316,14 @@ describe('archive', () => {
 
     describe.skip('(with a file in multiple sources)', () => {
 
-      let rootPath = 'resource/test/archive/multiple'
+      let rootPath = 'resource/test/library/archive/multiple'
       let sourcePath = [ `${rootPath}/source/a`, `${rootPath}/source/b` ]
       let targetPath = `${rootPath}/target`
+      let excludePath = []
+      let schedule = '* * * * * *'
 
       before(() => {
-        return Archive.createArchive(sourcePath, targetPath).runOnce()
+        return Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
       })
 
       it('should create the file', async () => {
@@ -328,7 +342,7 @@ describe('archive', () => {
 
     describe('(with an empty source)', () => {
 
-      let rootPath = 'resource/test/archive/empty'
+      let rootPath = 'resource/test/library/archive/empty'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []
@@ -375,7 +389,7 @@ describe('archive', () => {
 
     describe('(with an updated file in source)', () => {
 
-      let rootPath = 'resource/test/archive/updated'
+      let rootPath = 'resource/test/library/archive/updated'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []

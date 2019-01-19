@@ -58,7 +58,7 @@ archivePrototype.runOnce = function () {
     try {
     
       let parameter = [
-        ...Object.keys(Configuration.parameter.rsync).filter((name) => Configuration.parameter.rsync[name]),
+        ...Configuration.getParameter(Configuration.parameter.rsync),
         `--backup-dir=../${stamp}`, // ${Path.join(this.targetPath.replace(/^[^:]+:/, ''), stamp)}`,
         ...this.excludePath.map((path) => `--exclude=${path}`),
         ...this.sourcePath.map((path) => `${path}/`), // ...this.sourcePath
@@ -160,7 +160,7 @@ archivePrototype.runOnce = function () {
         if (!isResolved && !isRejected) {
 
           Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? '${signal}' : signal}) => { ... }) ${Configuration.conversion.toDuration(Process.hrtime(start)).toFormat(Configuration.format.longDuration)}`)
-          Log.trace(`\n\n${stdout}`)
+          if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
 
           if (code == 0) {
             
@@ -180,7 +180,7 @@ archivePrototype.runOnce = function () {
           }
           else {
   
-            Log.debug(`\n\n${stderr}`)
+            if (Is.not.emptyString(stderr)) Log.debug(`\n\n${stderr}`)
   
             isRejected = true
             reject(new ArchiveRunError())
