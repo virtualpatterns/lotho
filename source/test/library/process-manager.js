@@ -1,18 +1,24 @@
 import { assert as Assert } from 'chai'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
 
+import Package from '../../../package.json'
 import ProcessManager from '../../library/process-manager'
 import Configuration from '../../configuration'
 
 describe('process-manager', () => {
 
-  describe('startArchive()', () => {
+  describe('startArchive(name)', () => {
+
+    let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive`)
+    let configurationPath = `${rootPath}/configuration.json`
+    let name = Package.name
+    let targetPath = `${rootPath}/target`
 
     let pid = null 
 
     before(async () => {
-      Configuration.merge(Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive/configuration.json`))
-      pid = (await ProcessManager.startArchive()).pid
+      Configuration.merge(configurationPath)
+      pid = (await ProcessManager.startArchive(name)).pid
     })
   
     it('should be a valid pid', () => {
@@ -20,28 +26,30 @@ describe('process-manager', () => {
     })
 
     it('should create the content directory', () => {
-      return FileSystem.whenFileExists(1000, 20000, `${Configuration.path.target}/content`)
+      return FileSystem.whenFileExists(1000, 20000, `${targetPath}/content`)
     })
 
     after(async () => {
-      await ProcessManager.stopArchive()
-      await FileSystem.remove(`${Configuration.path.target}/content`)
+      await ProcessManager.stopArchive(name)
+      await FileSystem.remove(`${targetPath}/content`)
       Configuration.clear()
     })
 
   })
 
-  describe('stopArchive()', () => {
+  describe('stopArchive(name)', () => {
+
+    let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
+    let configurationPath = `${rootPath}/configuration.json`
+    let name = Package.name
+    let targetPath = `${rootPath}/target`
 
     let pid = null 
 
     before(async () => {
-
-      Configuration.merge(Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive/configuration.json`))
-
-      pid = (await ProcessManager.startArchive()).pid
-      await ProcessManager.stopArchive()
-
+      Configuration.merge(configurationPath)
+      pid = (await ProcessManager.startArchive(name)).pid
+      await ProcessManager.stopArchive(name)
     })
   
     it('should not be a valid pid', () => {
@@ -49,7 +57,7 @@ describe('process-manager', () => {
     })
 
     after(async () => {
-      await FileSystem.remove(`${Configuration.path.target}/content`)
+      await FileSystem.remove(`${targetPath}/content`)
       Configuration.clear()
     })
 

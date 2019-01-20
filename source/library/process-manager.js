@@ -5,16 +5,16 @@ import _ProcessManager from 'pm2'
 import Utilities from 'util'
 
 import Configuration from '../configuration'
-import Package from '../../package.json'
 
 const ProcessManager = Object.create(_ProcessManager)
 
 ProcessManager.connect = Utilities.promisify(ProcessManager.connect)
 ProcessManager.start = Utilities.promisify(ProcessManager.start)
+ProcessManager.describe = Utilities.promisify(ProcessManager.describe)
 ProcessManager.stop = Utilities.promisify(ProcessManager.stop)
 ProcessManager.delete = Utilities.promisify(ProcessManager.delete)
 
-ProcessManager.startArchive = async function () {
+ProcessManager.startArchive = async function (name) {
 
   await this.connect()
 
@@ -25,9 +25,12 @@ ProcessManager.startArchive = async function () {
       let option = {
         'apps': [
           {
-            'name': Configuration.startName,
+            'name': name,
             'script': Configuration.path.start,
-            'args': Configuration.getParameter(Configuration.parameter.start)
+            'args': [
+              ...Configuration.conversion.toParameter(Configuration.parameter.start),
+              'run-schedule', name
+            ]
           }
         ]
       }
@@ -58,54 +61,17 @@ ProcessManager.startArchive = async function () {
 
 }
 
-// ProcessManager.outputStatusOfArchive = async function () {
-
-//   await this.connect()
-
-//   try {
-
-//     try {
-//       await this._outputStatusOfArchive()
-//     }
-//     catch(error) {
-//       throw Is.array(error) ? error[0] : error
-//     } 
-
-//   }
-//   finally {
-//     await this.disconnect()
-//   }
-
-// }
-
-// ProcessManager._outputStatusOfArchive = async function () {
-
-//   Log.trace(`ProcessManager.describe('${Package.name}')`)
-//   let [ status ] = await this.describe(Package.name)
-//   // Log.trace({ status }, `ProcessManager.describe('${Package.name}')`)
-
-//   Log.debug(`Name: '${status.name}'`)
-//   Log.debug(`PID: ${status.pid}`)
-//   Log.debug(`Status: '${status.pm2_env.status}'`)
-//   Log.debug(`Script: '${status.pm2_env.pm_exec_path}'`)
-//   Log.debug(`Working Directory: '${status.pm2_env.pm_cwd}'`)
-//   Log.debug(`stderr: '${status.pm2_env.pm_err_log_path}'`)
-//   Log.debug(`stdout: '${status.pm2_env.pm_out_log_path}'`)
-//   Log.debug(`Restarts: '${status.pm2_env.unstable_restarts}'`)
-
-// }
-
-ProcessManager.stopArchive = async function () {
+ProcessManager.stopArchive = async function (name) {
 
   await this.connect()
 
   try {
 
-    Log.trace(`ProcessManager.stop('${Package.name}')`)
-    await this.stop(Package.name)
+    Log.trace(`ProcessManager.stop('${name}')`)
+    await this.stop(name)
 
-    Log.trace(`ProcessManager.delete('${Package.name}')`)
-    await this.delete(Package.name)
+    Log.trace(`ProcessManager.delete('${name}')`)
+    await this.delete(name)
 
   }
   finally {
@@ -114,30 +80,22 @@ ProcessManager.stopArchive = async function () {
 
 }
 
-// ProcessManager.execute = function (parameter) {
+ProcessManager.getPID = async function (name) {
 
-//   return new Promise((resolve, reject) => {
+  await this.connect()
 
-//     parameter = [
-//       ...Object.keys(Configuration.parameter.pm2).filter((name) => Configuration.parameter.pm2[name]),
-//       ...parameter
-//     ]
+  try {
 
-//     /*
-//     -s –silent 	hide all messages
-//     -m –mini-list 	display a compacted list without formatting
-//     */
+    Log.trace(`ProcessManager.describe('${name}')`)
+    let [ status ] = await this.describe(name)
 
-//     let option = { 'stdio': 'inherit' }
+    return status ? status.pid : null
 
-//     let process = ChildProcess.fork(Configuration.path.pm2, parameter, option)
+  }
+  finally {
+    await this.disconnect()
+  }
 
-//     process.on('exit', () => {
-//       resolve()
-//     })
-
-//   })
-
-// }
+}
 
 export default ProcessManager

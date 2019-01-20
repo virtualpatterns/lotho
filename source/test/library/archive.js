@@ -1,5 +1,5 @@
 import { assert as Assert } from 'chai'
-import { FileSystem, Path } from '@virtualpatterns/mablung'
+import { FileSystem } from '@virtualpatterns/mablung'
 
 import Archive from '../../library/archive'
 import Configuration from '../../configuration'
@@ -35,12 +35,11 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
       })
 
       it('should create the content directory', async () => {
@@ -48,15 +47,15 @@ describe('archive', () => {
       })
 
       it('should have created 1 path', () => {
-        Assert.equal(result.statistics.countOfCreated, 1)
+        Assert.equal(result.statistic.countOfCreated, 1)
       })
 
       it('should have updated 0 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 0)
+        Assert.equal(result.statistic.countOfUpdated, 0)
       })
 
       it('should have deleted 0 paths', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
       after(() => {
@@ -71,12 +70,11 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
       })
 
       it('should create the file', async () => {
@@ -84,15 +82,15 @@ describe('archive', () => {
       })
 
       it('should have created 2 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 2)
+        Assert.equal(result.statistic.countOfCreated, 2)
       })
 
       it('should have updated 1 path', () => {
-        Assert.equal(result.statistics.countOfUpdated, 1)
+        Assert.equal(result.statistic.countOfUpdated, 1)
       })
 
       it('should have deleted 0 paths', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
       after(() => {
@@ -101,36 +99,35 @@ describe('archive', () => {
 
     })
 
-    describe.skip('(with a hidden directory in source and a remote target)', () => {
+    // describe.skip('(with a hidden directory in source and a remote target)', () => {
 
-      let rootPath = 'resource/test/library/archive/hidden'
-      let sourcePath = `${rootPath}/source`
-      let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE/${rootPath}/target`
-      let excludePath = []
-      let schedule = '* * * * * *'
+    //   let rootPath = 'resource/test/library/archive/hidden'
+    //   let sourcePath = `${rootPath}/source`
+    //   let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE/${rootPath}/target`
+    //   let excludePath = []
 
-      let result = null
+    //   let result = null
 
-      before(async () => {
+    //   before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
-        result = await archive.runOnce()
+    //     let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
+    //     result = await archive.runOnce()
 
-        await wait(1000)
+    //     await wait(1000)
 
-        result = await archive.runOnce()
+    //     result = await archive.runOnce()
 
-      })
+    //   })
 
-      it('should have created 0 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 0)
-      })
+    //   it('should have created 0 paths', () => {
+    //     Assert.equal(result.statistic.countOfCreated, 0)
+    //   })
 
-      it('should have updated 0 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 0)
-      })
+    //   it('should have updated 0 paths', () => {
+    //     Assert.equal(result.statistic.countOfUpdated, 0)
+    //   })
 
-    })
+    // })
 
     describe('(with an updated file in source)', () => {
 
@@ -138,13 +135,12 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
+        let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -161,15 +157,15 @@ describe('archive', () => {
       })
 
       it('should have created 0 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 0)
+        Assert.equal(result.statistic.countOfCreated, 0)
       })
 
       it('should have updated 1 path', () => {
-        Assert.equal(result.statistics.countOfUpdated, 1)
+        Assert.equal(result.statistic.countOfUpdated, 1)
       })
 
       it('should have deleted 0 paths', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
       after(() => {
@@ -189,13 +185,12 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = []
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
+        let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -210,15 +205,15 @@ describe('archive', () => {
       })
 
       it('should have created 0 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 0)
+        Assert.equal(result.statistic.countOfCreated, 0)
       })
 
       it('should have updated 0 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 0)
+        Assert.equal(result.statistic.countOfUpdated, 0)
       })
 
       it('should have deleted 1 path', () => {
-        Assert.equal(result.statistics.countOfDeleted, 1)
+        Assert.equal(result.statistic.countOfDeleted, 1)
       })
 
       after(() => {
@@ -236,12 +231,11 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = 'b.txt'
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
       })
 
       it('should create the not excluded file', async () => {
@@ -253,15 +247,15 @@ describe('archive', () => {
       })
 
       it('should have created 2 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 2)
+        Assert.equal(result.statistic.countOfCreated, 2)
       })
 
       it('should have updated 1 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 1)
+        Assert.equal(result.statistic.countOfUpdated, 1)
       })
 
       it('should have deleted 0 path', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
       after(() => {
@@ -276,13 +270,12 @@ describe('archive', () => {
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
       let excludePath = 'b.txt'
-      let schedule = '* * * * * *'
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, [], schedule).runOnce()
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, []).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
       })
 
       it('should delete the excluded file', async () => {
@@ -294,15 +287,15 @@ describe('archive', () => {
       })
 
       it('should have created 0 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 0)
+        Assert.equal(result.statistic.countOfCreated, 0)
       })
 
       it('should have updated 0 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 0)
+        Assert.equal(result.statistic.countOfUpdated, 0)
       })
 
       it('should have deleted 1 path', () => {
-        Assert.equal(result.statistics.countOfDeleted, 1)
+        Assert.equal(result.statistic.countOfDeleted, 1)
       })
 
       after(() => {
@@ -314,16 +307,17 @@ describe('archive', () => {
 
     })
 
-    describe.skip('(with a file in multiple sources)', () => {
+    describe('(with a file in multiple sources)', () => {
+
+      // Rsync silently overwrites the file in this case ... so skip
 
       let rootPath = 'resource/test/library/archive/multiple'
       let sourcePath = [ `${rootPath}/source/a`, `${rootPath}/source/b` ]
       let targetPath = `${rootPath}/target`
       let excludePath = []
-      let schedule = '* * * * * *'
 
       before(() => {
-        return Archive.createArchive(sourcePath, targetPath, excludePath, schedule).runOnce()
+        return Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
       })
 
       it('should create the file', async () => {
@@ -340,6 +334,24 @@ describe('archive', () => {
 
   describe('startSchedule()', () => {
 
+    let onCompleted = function (archive, schedule) {
+      return new Promise((resolve) => {
+        archive.once('completed', (result) => {
+          resolve(result)
+        })
+        archive.startSchedule(schedule)
+      })
+    }
+
+    let onStopped = function (archive) {
+      return new Promise((resolve) => {
+        archive.once('stopped', () => {
+          resolve()
+        })
+        archive.stopSchedule()
+      })
+    }
+
     describe('(with an empty source)', () => {
 
       let rootPath = 'resource/test/library/archive/empty'
@@ -351,16 +363,8 @@ describe('archive', () => {
       let archive = null
       let result = null
 
-      before((complete) => {
-
-        archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
-
-        archive.startSchedule()
-        archive.once('completed', (_result) => {
-          result = _result
-          complete()
-        })
-
+      before(async () => {
+        result = await onCompleted(archive = Archive.createArchive(sourcePath, targetPath, excludePath), schedule)
       })
 
       it('should create the content directory', async () => {
@@ -368,21 +372,20 @@ describe('archive', () => {
       })
 
       it('should have created 1 path', () => {
-        Assert.equal(result.statistics.countOfCreated, 1)
+        Assert.equal(result.statistic.countOfCreated, 1)
       })
 
       it('should have updated 0 paths', () => {
-        Assert.equal(result.statistics.countOfUpdated, 0)
+        Assert.equal(result.statistic.countOfUpdated, 0)
       })
 
       it('should have deleted 0 paths', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
-      after(() => {
-        return Promise.resolve()
-          .then(() => archive.stopSchedule())
-          .then(() => FileSystem.remove(`${targetPath}/content`))
+      after(async () => {
+        await onStopped(archive)
+        await FileSystem.remove(`${targetPath}/content`)
       })
 
     })
@@ -398,27 +401,15 @@ describe('archive', () => {
       let archive = null
       let result = null
 
-      before(() => {
+      before(async () => {
 
-        return Promise.resolve()
-          .then(() => FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 }))
-          .then(() => new Promise((resolve) => {
+        archive = Archive.createArchive(sourcePath, targetPath, excludePath)
 
-            archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)
+        await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+        result = await onCompleted(archive, schedule)
 
-            archive.startSchedule()
-            archive.once('completed', () => resolve())
-
-          }))
-          .then(() => FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 }))
-          .then(() => new Promise((resolve) => {
-
-            archive.once('completed', (_result) => {
-              result = _result
-              resolve()
-            })
-
-          }))
+        await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+        result = await onCompleted(archive, schedule)
 
       })
 
@@ -427,61 +418,60 @@ describe('archive', () => {
       })
 
       it('should have created 0 paths', () => {
-        Assert.equal(result.statistics.countOfCreated, 0)
+        Assert.equal(result.statistic.countOfCreated, 0)
       })
 
       it('should have updated 1 path', () => {
-        Assert.equal(result.statistics.countOfUpdated, 1)
+        Assert.equal(result.statistic.countOfUpdated, 1)
       })
 
       it('should have deleted 0 paths', () => {
-        Assert.equal(result.statistics.countOfDeleted, 0)
+        Assert.equal(result.statistic.countOfDeleted, 0)
       })
 
-      after(() => {
-        return Promise.resolve()
-          .then(() => archive.stopSchedule())
-          .then(() => Promise.all([
-            FileSystem.remove(`${sourcePath}/a.json`),
-            FileSystem.remove(`${targetPath}/content`),
-            FileSystem.remove(`${targetPath}/${result.stamp}`)
-          ]))
-      })
-
-    })
-
-    describe.skip('(with a very large source to a remote target)', () => {
-
-      let sourcePath = Path.normalize(`${__dirname}/../../../../lotho`)
-      let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${Configuration.computerName}`
-      let excludePath = [ 'distributable' ]
-      let schedule = '*/5 * * * * *'
-
-      let archive = null
-
-      before(() => {
-        (archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)).startSchedule()
-      })
-
-      it('should ...', (complete) => {
-        archive.once('completed', () => {
-          Assert.isTrue(true)
-          complete()
-        })
-      })
-
-      it('should ...', (complete) => {
-        archive.once('completed', () => {
-          Assert.isTrue(true)
-          complete()
-        })
-      })
-
-      after(() => {
-        archive.stopSchedule()
+      after(async () => {
+        await onStopped(archive)
+        await Promise.all([
+          FileSystem.remove(`${sourcePath}/a.json`),
+          FileSystem.remove(`${targetPath}/content`),
+          FileSystem.remove(`${targetPath}/${result.stamp}`)
+        ])
       })
 
     })
+
+    // describe.skip('(with a very large source to a remote target)', () => {
+
+    //   let sourcePath = Path.normalize(`${__dirname}/../../../../lotho`)
+    //   let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${Configuration.computerName}`
+    //   let excludePath = [ 'distributable' ]
+    //   let schedule = '*/5 * * * * *'
+
+    //   let archive = null
+
+    //   before(() => {
+    //     (archive = Archive.createArchive(sourcePath, targetPath, excludePath, schedule)).startSchedule(schedule)
+    //   })
+
+    //   it('should ...', (complete) => {
+    //     archive.once('completed', () => {
+    //       Assert.isTrue(true)
+    //       complete()
+    //     })
+    //   })
+
+    //   it('should ...', (complete) => {
+    //     archive.once('completed', () => {
+    //       Assert.isTrue(true)
+    //       complete()
+    //     })
+    //   })
+
+    //   after(() => {
+    //     archive.stopSchedule()
+    //   })
+
+    // })
 
   })
 

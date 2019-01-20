@@ -7,7 +7,6 @@ describe('configuration', () => {
 
   let rootPath = Path.normalize(`${__dirname}/../../resource/test/configuration`)
   let configurationPath = `${rootPath}/configuration.json`
-  let sourcePath = 'resource/test/configuration/source'
 
   describe('merge(value)', () => {
 
@@ -15,8 +14,8 @@ describe('configuration', () => {
       Configuration.merge(configurationPath)
     })
 
-    it(`should include '${sourcePath}'`, () => {
-      Assert.include(Configuration.path.source, sourcePath)
+    it(`should be equal to '${Path.trim(configurationPath)}'`, () => {
+      Assert.equal(Configuration.path.configuration, configurationPath)
     })
 
     after(() => {
@@ -32,8 +31,8 @@ describe('configuration', () => {
       Configuration.clear()
     })
 
-    it(`should not include '${sourcePath}'`, () => {
-      Assert.notInclude(Configuration.path.source, sourcePath)
+    it(`should not be equal to '${Path.trim(configurationPath)}'`, () => {
+      Assert.notEqual(Configuration.path.configuration, configurationPath)
     })
 
   })

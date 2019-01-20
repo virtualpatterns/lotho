@@ -19,72 +19,52 @@ Command
   .command('create-configuration')
   .description(`Create a default configuration at the path specified if one doesn't exist, defaults to '${Path.trim(Configuration.path.configuration)}'`)
   .action(() => {
-    return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('create-configuration')
-      Log.debug(Configuration.line)
-    })
+    return Command.execute(() => {})
   })
 
 Command
-  .command('run-once')
+  .command('run-once [name]')
   .description('Archive the source directories according to the configuration')
-  .action(() => {
+  .action((name) => {
     return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('run-once')
-      Log.debug(Configuration.line)
-      return Archive.createArchive().runOnce()
+      return Promise.all(Configuration.archive
+        .filter((archive) => name ? archive.name == name : true)
+        .map((archive) => Archive.createArchive(archive.path.source, archive.path.target, archive.path.exclude).runOnce()))
     })
   })
 
 Command
-  .command('run-schedule')
+  .command('run-schedule <name>')
   .description('Schedule the archive according to the configuration')
-  .action(() => {
+  .action((name) => {
     return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('run-schedule')
-      Log.debug(Configuration.line)
-      return Archive.createArchive().startSchedule()
+      Configuration.archive
+        .filter((archive) => archive.name == name)
+        .forEach((archive) => Archive.createArchive(archive.path.source, archive.path.target, archive.path.exclude).startSchedule(archive.schedule))
     })
   })
 
 Command
-  .command('start-archive')
-  .description('Start both the process manager and the schedule')
-  .action(() => {
-    return Command.execute(() => {
-      Log.debug(Configuration.line)
-      Log.debug('start-archive')
-      Log.debug(Configuration.line)
-      return ProcessManager.startArchive()
+  .command('start-archive [name]')
+  .description('Start both the process manager and the schedule(s)')
+  .action((name) => {
+    return Command.execute(async () => {
+      for (let archive of Configuration.archive.filter((archive) => name ? archive.name == name : true)) {
+        await ProcessManager.startArchive(archive.name)
+      }
     })
   })
 
-// Command
-//   .command('status-archive')
-//   .description('Log the status of the schedule')
-//   .action(() => {
-//     return Command.execute(() => {
-//       Log.debug(Configuration.line)
-//       Log.debug('status-archive')
-//       Log.debug(Configuration.line)
-//       return ProcessManager.logStatusOfArchive()
-//     })
-//   })
-
-// Command
-//   .command('stop-archive')
-//   .description('Stop the schedule (the process manager remains running)')
-//   .action(() => {
-//     return Command.execute(() => {
-//       Log.debug(Configuration.line)
-//       Log.debug('stop-archive')
-//       Log.debug(Configuration.line)
-//       return ProcessManager.stopArchive()
-//     })
-//   })
+Command
+  .command('stop-archive [name]')
+  .description('Stop and delete the schedule(s) (the process manager remains running)')
+  .action((name) => {
+    return Command.execute(async () => {
+      for (let archive of Configuration.archive.filter((archive) => name ? archive.name == name : true)) {
+        await ProcessManager.stopArchive(archive.name)
+      }
+    })
+  })
 
 Command.on('command:*', () => {
   return Command.execute(async () => {
@@ -119,6 +99,8 @@ Command.execute = async function (fn) {
       await FileSystem.mkdir(Path.dirname(Configuration.logPath), { 'recursive': true })
       Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
     }
+
+    Log.debug(Configuration.line)
 
     try {
 

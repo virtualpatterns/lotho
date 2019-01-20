@@ -12,37 +12,84 @@ import { ArchiveRunError } from './error/archive-error'
 
 const archivePrototype = Object.create(EventEmitter.prototype)
 
-archivePrototype.startSchedule = function () {
-  Log.trace('Archive.startSchedule()')
+archivePrototype.startSchedule = function (schedule) {
+  Log.trace(`Archive.startSchedule('${schedule}')`)
 
-  this.job.start()
-    
-  Process.once('SIGINT', this.SIGINT = () => {
-    Log.trace('Process.once(\'SIGINT\', () => { ... })')
-    this.stopSchedule()
-  })
+  if (Is.null(this.job)) { 
 
-  Process.once('SIGTERM', this.SIGTERM = () => {
-    Log.trace('Process.once(\'SIGTERM\', () => { ... })')
-    this.stopSchedule()
-  })
+    this.job = new Job(schedule, this.onScheduled.bind(this), this.onStopped.bind(this)) // , false, Configuration.timeZone)
+    this.job.start()
+      
+    Process.once('SIGINT', this.stopSchedule)
+    Process.once('SIGTERM', this.stopSchedule)
+  
+    Log.debug(`Next scheduled archive ${this.getNextRun().toFormat(Configuration.format.longSchedule)}`)
 
-  Log.debug(`Next scheduled archive ${this.getNextRun().toFormat(Configuration.format.longSchedule)}`)
+  }
 
-}
-
-archivePrototype.getNextRun = function () {
-  return DateTime.fromJSDate(this.job.nextDates(1)[0].toDate())
 }
 
 archivePrototype.stopSchedule = function () {
   Log.trace('Archive.stopSchedule()')
 
-  Process.off('SIGTERM', this.SIGTERM)
-  Process.off('SIGINT', this.SIGINT)
+  if (Is.not.null(this.job)) { 
 
-  this.job.stop()
-    
+    Process.off('SIGTERM', this.stopSchedule)
+    Process.off('SIGINT', this.stopSchedule)
+
+    this.job.stop()
+    this.job = null
+
+    Log.debug('No next scheduled archive')
+
+  }
+
+}
+
+archivePrototype.getNextRun = function () {
+  return Is.not.null(this.job) ? DateTime.fromJSDate(this.job.nextDates(1)[0].toDate()) : null
+}
+
+archivePrototype.onScheduled = async function () {
+
+  try {
+
+    let lockPath = Path.join(Configuration.path.home, `${this.id}.lock`)
+
+    await FileSystem.mkdir(Path.dirname(lockPath), { 'recursive': true })
+    await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf8', 'flag': 'wx' })
+
+    Log.debug(Configuration.line)
+    Log.trace('Archive.onScheduled()')
+  
+    try {
+
+      let result = await this.runOnce()
+      result.nextRun = this.getNextRun()
+
+      Log.debug(`Next scheduled archive ${result.nextRun.toFormat(Configuration.format.longSchedule)}`)
+
+      this.emit('completed', result)
+
+    }
+    catch (error) {
+      delete error.name
+      Log.trace(error, 'catch (error) { ... })')
+    }
+    finally {
+      await FileSystem.unlink(lockPath)
+    }
+      
+  }
+  catch (error) {
+    Log.trace(error, 'catch (error) { ... })')
+  }
+
+}
+
+archivePrototype.onStopped = function () {
+  Log.trace('Archive.onStopped()')
+  this.emit('stopped')
 }
 
 archivePrototype.runOnce = function () {
@@ -58,17 +105,15 @@ archivePrototype.runOnce = function () {
     try {
     
       let parameter = [
-        ...Configuration.getParameter(Configuration.parameter.rsync),
+        ...Configuration.conversion.toParameter(Configuration.parameter.rsync),
         `--backup-dir=../${stamp}`, // ${Path.join(this.targetPath.replace(/^[^:]+:/, ''), stamp)}`,
         ...this.excludePath.map((path) => `--exclude=${path}`),
         ...this.sourcePath.map((path) => `${path}/`), // ...this.sourcePath
         Path.join(this.targetPath, 'content')
       ]
       
-      let option = {}
-
-      Log.trace({ parameter }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter, option) ...`)
-      let process = ChildProcess.spawn(Configuration.path.rsync, parameter, option)
+      Log.trace({ parameter }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter) ...`)
+      let process = ChildProcess.spawn(Configuration.path.rsync, parameter)
 
       let start = Process.hrtime()
       let progress = Process.hrtime()
@@ -164,18 +209,18 @@ archivePrototype.runOnce = function () {
 
           if (code == 0) {
             
-            let statistics = Archive.getStatistics(stdout)
+            let statistic = Archive.getStatistic(stdout)
 
-            Log.debug(`Scanned: ${statistics.countOfScanned}`)
-            Log.debug(`Created: ${statistics.countOfCreated}`)
-            Log.debug(`Updated: ${statistics.countOfUpdated}`)
+            Log.debug(`Scanned: ${statistic.countOfScanned}`)
+            Log.debug(`Created: ${statistic.countOfCreated}`)
+            Log.debug(`Updated: ${statistic.countOfUpdated}`)
 
-            if (statistics.countOfDeleted) {
-              Log.debug(`Deleted: ${statistics.countOfDeleted}`)
+            if (statistic.countOfDeleted) {
+              Log.debug(`Deleted: ${statistic.countOfDeleted}`)
             }
   
             isResolved = true
-            resolve({ stamp, statistics })
+            resolve({ stamp, statistic })
 
           }
           else {
@@ -207,58 +252,19 @@ archivePrototype.runOnce = function () {
 
 }
 
-archivePrototype.onScheduled = async function () {
-
-  try {
-
-    await FileSystem.mkdir(Path.dirname(this.lockPath), { 'recursive': true })
-    await FileSystem.writeFile(this.lockPath, '', { 'encoding': 'utf8', 'flag': 'wx' })
-
-    Log.debug(Configuration.line)
-    Log.trace('Archive.onScheduled()')
-  
-    try {
-
-      let result = await this.runOnce()
-      result.nextRun = this.getNextRun()
-
-      Log.debug(`Next scheduled archive ${result.nextRun.toFormat(Configuration.format.longSchedule)}`)
-
-      this.emit('completed', result)
-
-    }
-    catch (error) {
-      delete error.name
-      Log.trace(error, 'catch (error) { ... })')
-    }
-    finally {
-      await FileSystem.unlink(this.lockPath)
-    }
-      
-  }
-  catch (error) {
-    Log.trace(error, 'catch (error) { ... })')
-  }
-
-}
-
-archivePrototype.onStopped = function () {
-  Log.trace('Archive.onStopped()')
-}
-
 const Archive = Object.create({})
 
-Archive.createArchive = function (sourcePath = Configuration.path.source, targetPath = Configuration.path.target, excludePath = Configuration.path.exclude, schedule = Configuration.schedule, prototype = archivePrototype) {
-  Log.trace({ sourcePath, targetPath, excludePath, schedule }, 'Archive.createArchive(sourcePath, targetPath, excludePath, schedule, prototype)')
+Archive.createArchive = function (sourcePath, targetPath, excludePath, prototype = archivePrototype) {
+  Log.trace({ sourcePath, targetPath, excludePath }, 'Archive.createArchive(sourcePath, targetPath, excludePath, prototype)')
 
   let archive = Object.create(prototype)
 
-  archive.lockPath = Path.join(Configuration.path.home, `${UUID()}.lock`)
   archive.sourcePath = Is.array(sourcePath) ? sourcePath : [ sourcePath ]
   archive.targetPath = targetPath
   archive.excludePath = Is.array(excludePath) ? excludePath : [ excludePath ]
 
-  archive.job = new Job(schedule, archive.onScheduled.bind(archive), archive.onStopped.bind(archive)) // , false, Configuration.timeZone)
+  archive.id = UUID()
+  archive.job = null
 
   return archive
 
@@ -272,7 +278,7 @@ Archive.isArchive = function (archive) {
   return archivePrototype.isPrototypeOf(archive)
 }
 
-Archive.getStatistics = function (stdout) {
+Archive.getStatistic = function (stdout) {
 
   return {
     'countOfScanned': this.getCountOfScanned(stdout),

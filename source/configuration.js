@@ -11,30 +11,28 @@ const MILLISECONDS_PER_SECOND = 1000
 const NANOSECONDS_PER_SECOND = 1000000000
 
 const configurationPrototype = {
-  'archive': [
-    {
-      'name': Package.name,
-      'path': {      
-        'source': [ '' ],
-        'target': '',
-        'exclude': [ '' ]
-      },
-      'schedule': ''
-    }
-  ],
+  'archive': [],
   'conversion': {
     'toDuration': ([ seconds, nanoseconds ]) => Duration.fromMillis((seconds + nanoseconds / NANOSECONDS_PER_SECOND) * MILLISECONDS_PER_SECOND),
-    'toMilliseconds': (value) => {
-
-      if (Is.array(value)) {
-        let [ seconds, nanoseconds ] = value
-        return (seconds + nanoseconds / NANOSECONDS_PER_SECOND) * MILLISECONDS_PER_SECOND
-      }
-      else if (value.user &&
-               value.system) {
-        return value.user + value.system
-      }
-
+    'toParameter': (parameter) => {
+      return Object.keys(parameter)
+        .filter((name) => parameter[name])
+        .map((name) => {
+    
+          let value = parameter[name]
+    
+          if (Is.function(value)) {
+            return [ name, value() ]
+          }
+          else if (Is.string(value)) {
+            return [ name, value ]
+          }
+          else {
+            return name
+          }
+    
+        })
+        .flat()
     },
     'toSeconds': ([ seconds, nanoseconds ]) => (seconds + nanoseconds / NANOSECONDS_PER_SECOND).toFixed(2)
   },
@@ -67,9 +65,6 @@ const configurationPrototype = {
   'logPath': 'console', // `${Process.env.HOME}/.lotho/lotho.log`,
   'now': () => DateTime.utc(),
   'parameter': {
-    'pm2': {
-      '–-mini-list': true
-    },
     'rsync': {
       '--archive': true,
       '--backup': true,
@@ -84,7 +79,6 @@ const configurationPrototype = {
       '--whole-file': true
     },
     'start': {
-      'run-schedule': true,
       '--configurationPath': () => Configuration.path.configuration,
       '--logLevel': () => Configuration.logLevel,
       '--logPath': () => Configuration.logPath
@@ -93,10 +87,6 @@ const configurationPrototype = {
   'path': {
     'configuration': `${Process.env.HOME}/.lotho/configuration.json`,
     'home': `${Process.env.HOME}/.lotho`,
-    'source': [],
-    'target': null,
-    'exclude': [],
-    'pm2': Path.normalize(`${__dirname}/../node_modules/pm2/bin/pm2`),
     'rsync': '/usr/local/bin/rsync',
     'start': Path.normalize(`${__dirname}/lotho.js`)
   },
@@ -113,8 +103,6 @@ const configurationPrototype = {
       'maximum': Infinity
     }
   },
-  'schedule': null,
-  'startName': Package.name,
   'task': {
     'logLevel': 'debug',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-task.log`
@@ -123,14 +111,10 @@ const configurationPrototype = {
     'logLevel': 'trace',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-test.log`,
     'parameter': {
-      'lotho': {},
-      'pm2': {
-        '--silent': true
-      }
+      'lotho': {}
     },
     'path': {
-      'lotho': 'distributable/lotho.js',
-      'pm2': 'node_modules/pm2/bin/pm2'
+      'lotho': 'distributable/lotho.js'
     }
   }
 }
@@ -154,27 +138,6 @@ Configuration.merge = function (value) { // = Configuration.path.configuration) 
 
 Configuration.clear = function () {
   Object.setPrototypeOf(Configuration, configurationPrototype)
-}
-
-Configuration.getParameter = function (parameter) {
-  return Object.keys(parameter)
-    .filter((name) => parameter[name])
-    .map((name) => {
-
-      let value = parameter[name]
-
-      if (Is.function(value)) {
-        return [ name, value() ]
-      }
-      else if (Is.string(value)) {
-        return [ name, value ]
-      }
-      else {
-        return name
-      }
-
-    })
-    .flat()
 }
 
 export default Configuration
