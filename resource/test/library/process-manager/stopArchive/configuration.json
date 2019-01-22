@@ -1,0 +1,24 @@
+{
+  "archive": [
+    {
+      "name": "stopArchive",
+      "path": {
+        "source": [ "resource/test/library/process-manager/stopArchive/source" ],
+        "target": "resource/test/library/process-manager/stopArchive/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/5 * * * * *"
+    }
+  ],
+  "parameter": {
+    "rsync": {
+      "--relative": false
+    }
+  },
+  "range": {
+    "progressInSeconds":  {
+      "minimum": 0.0
+    }
+  }
+}

@@ -85,7 +85,7 @@ describe('lotho', () => {
     let targetPath1 = `${rootPath}/1/target`
     let targetPath2 = `${rootPath}/2/target`
 
-    describe('(when called without a name', () => {
+    describe('(when called without a name)', () => {
 
       let code = null
 
@@ -118,7 +118,33 @@ describe('lotho', () => {
   
     })
 
-    describe('(when called with a name', () => {
+    describe('(when called with a name that fails)', () => {
+
+      let code = null
+
+      before(async () => {
+        code = await run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.test.logLevel, '--logPath', Configuration.test.logPath,
+          'run-once', '1.5'
+        ])
+      })
+  
+      it('should exit with 2', () => {
+        Assert.equal(code, 2)
+      })
+  
+      it('should not create the content directory', async () => {
+        Assert.isFalse(await FileSystem.pathExists(`${targetPath1}/content`))
+      })
+  
+      it('should not create the content directory', async () => {
+        Assert.isFalse(await FileSystem.pathExists(`${targetPath2}/content`))
+      })
+      
+    })
+
+    describe('(when called with a name that succeeds)', () => {
 
       let code = null
 
@@ -185,7 +211,7 @@ describe('lotho', () => {
     let targetPath1 = `${rootPath}/1/target`
     let targetPath2 = `${rootPath}/2/target`
 
-    describe('(when called without a name', () => {
+    describe('(when called without a name)', () => {
 
       let pid1 = null
       let pid2 = null
@@ -238,7 +264,7 @@ describe('lotho', () => {
   
     })
 
-    describe('(when called with a name', () => {
+    describe('(when called with a name)', () => {
 
       let pid1 = null
       let pid2 = null
@@ -300,7 +326,7 @@ describe('lotho', () => {
     let targetPath1 = `${rootPath}/1/target`
     let targetPath2 = `${rootPath}/2/target`
 
-    describe('(when called without a name', () => {
+    describe('(when called without a name)', () => {
 
       let pid1 = null
       let pid2 = null
@@ -351,7 +377,51 @@ describe('lotho', () => {
   
     })
 
-    describe('(when called with a name', () => {
+    describe('(when started with a name and called without a name)', () => {
+
+      let pid1 = null
+      let pid2 = null
+      let code = null
+
+      before(async () => {
+  
+        code = await run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.test.logLevel, '--logPath', Configuration.test.logPath,
+          'start-archive', '2'
+        ])
+
+        await FileSystem.whenFileExists(1000, 20000, `${targetPath2}/content`)
+
+        pid2 = await ProcessManager.getPID('2')
+
+        code = await run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.test.logLevel, '--logPath', Configuration.test.logPath,
+          'stop-archive'
+        ])
+  
+      })
+  
+      it('should exit with 0', () => {
+        Assert.equal(code, 0)
+      })
+  
+      it('should not be a valid pid', () => {
+        Assert.throws(() => Process.kill(pid1, 0))
+      })
+
+      it('should not be a valid pid', () => {
+        Assert.throws(() => Process.kill(pid2, 0))
+      })
+
+      after(() => {
+        return FileSystem.remove(`${targetPath2}/content`)
+      })
+  
+    })
+
+    describe('(when called with a name for a started archive)', () => {
 
       let pid1 = null
       let pid2 = null

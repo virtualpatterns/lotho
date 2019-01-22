@@ -1,0 +1,19 @@
+{
+  "archive": [
+    {
+      "name": "PODMORE",
+      "path": {
+        "source": [
+          "/Users/fficnar/.lotho"
+        ],
+        "target": "BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE",
+        "include": [],
+        "exclude": [ 
+          "*.log",
+          "*.lock"
+        ]
+      },
+      "schedule": "0 0 */1 * * *"
+    }
+  ]
+}

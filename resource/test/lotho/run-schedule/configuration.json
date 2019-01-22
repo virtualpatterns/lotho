@@ -1,0 +1,24 @@
+{
+  "archive": [
+    {
+      "name": "@virtualpatterns/lotho",
+      "path": {
+        "source": [ "resource/test/lotho/run-schedule/source" ],
+        "target": "resource/test/lotho/run-schedule/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/5 * * * * *"
+    }
+  ],
+  "parameter": {
+    "rsync": {
+      "--relative": false
+    }
+  },
+  "range": {
+    "progressInSeconds":  {
+      "minimum": 0.0
+    }
+  }
+}

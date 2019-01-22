@@ -2,11 +2,9 @@ import { Duration, DateTime } from 'luxon'
 import Is from '@pwn/is'
 import Merge from 'deepmerge'
 import OS from 'os'
-import { Path, Process } from '@virtualpatterns/mablung'
+import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
 
-import Package from '../package.json'
-
-const COMPUTER_NAME = OS.hostname().match(/^[^.]+/)
+const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
 const MILLISECONDS_PER_SECOND = 1000
 const NANOSECONDS_PER_SECOND = 1000000000
 
@@ -39,20 +37,24 @@ const configurationPrototype = {
   'default': {
     'archive': [
       {
-        'name': Package.name,
+        'name': 'COMPUTER_NAME',
         'path': {
-          'source': [ `${Process.env.HOME}/.lotho` ],
+          'source': [ 
+            `${Process.env.HOME}/.lotho` 
+          ],
           'target': `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${COMPUTER_NAME}`,
+          'include': [],
           'exclude': [
             '.DS_Store',
-            '.localized',
-            'Icon\\#015',
-            '*.lock'
+            '*.lock',
+            '*.log'
           ]
         },
         'schedule': '0 0 */1 * * *'
       }
-    ]
+    ],
+    'logLevel': 'debug',
+    'logPath': `${Process.env.HOME}/.lotho/lotho.log`
   },
   'format': {
     'longDuration': 'hh\'h\' mm\'m\' ss.SSSS\'s\'',
@@ -62,7 +64,7 @@ const configurationPrototype = {
   'computerName': COMPUTER_NAME,
   'line': '-'.repeat(80),
   'logLevel': 'debug',
-  'logPath': 'console', // `${Process.env.HOME}/.lotho/lotho.log`,
+  'logPath': `${Process.env.HOME}/.lotho/lotho.log`,
   'now': () => DateTime.utc(),
   'parameter': {
     'rsync': {
@@ -78,11 +80,7 @@ const configurationPrototype = {
       '--times': true,
       '--whole-file': true
     },
-    'start': {
-      '--configurationPath': () => Configuration.path.configuration,
-      '--logLevel': () => Configuration.logLevel,
-      '--logPath': () => Configuration.logPath
-    }
+    'start': {}
   },
   'path': {
     'configuration': `${Process.env.HOME}/.lotho/configuration.json`,
@@ -95,7 +93,8 @@ const configurationPrototype = {
     'countOfScanned': /number of files: ([\d,]+)/im,
     'countOfCreated': /number of created files: ([\d,]+)/im,
     'countOfUpdated': /number of regular files transferred: ([\d,]+)/im,
-    'countOfDeleted': /number of deleted files: ([\d,]+)/im
+    'countOfDeleted': /number of deleted files: ([\d,]+)/im,
+    'path': /abc/ // buckbeak.local:/Volumes/BUCKBEAK1/Bac
   },
   'range': {
     'progressInSeconds':  {
@@ -108,7 +107,7 @@ const configurationPrototype = {
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-task.log`
   },
   'test': {
-    'logLevel': 'trace',
+    'logLevel': 'debug',
     'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-test.log`,
     'parameter': {
       'lotho': {}
@@ -121,12 +120,12 @@ const configurationPrototype = {
 
 const Configuration = Object.create(configurationPrototype)
 
-Configuration.merge = function (value) { // = Configuration.path.configuration) {
+Configuration.merge = function (value) {
 
   let configuration = null
 
   if (Is.string(value)) {
-    configuration = Merge(require(value), { 'path': { 'configuration': value } })
+    configuration = Merge(FileSystem.readJsonSync(value, { 'encoding': 'utf-8' }), { 'path': { 'configuration': value } })
   }
   else {
     configuration = value

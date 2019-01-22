@@ -1,0 +1,24 @@
+{
+  "archive": [
+    {
+      "name": "startArchive",
+      "path": {
+        "source": [ "resource/test/library/process-manager/startArchive/source" ],
+        "target": "resource/test/library/process-manager/startArchive/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/5 * * * * *"
+    }
+  ],
+  "parameter": {
+    "rsync": {
+      "--relative": false
+    }
+  },
+  "range": {
+    "progressInSeconds":  {
+      "minimum": 0.0
+    }
+  }
+}

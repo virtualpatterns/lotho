@@ -10,6 +10,7 @@ describe('archive', () => {
     Configuration.merge({
       'parameter': {
         'rsync': {
+          '--prune-empty-dirs': false,
           '--relative': false
         }
       },
@@ -34,12 +35,11 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/empty'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath).runOnce()
       })
 
       it('should create the content directory', async () => {
@@ -69,12 +69,11 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/single'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath).runOnce()
       })
 
       it('should create the file', async () => {
@@ -99,48 +98,17 @@ describe('archive', () => {
 
     })
 
-    // describe.skip('(with a hidden directory in source and a remote target)', () => {
-
-    //   let rootPath = 'resource/test/library/archive/hidden'
-    //   let sourcePath = `${rootPath}/source`
-    //   let targetPath = `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/PODMORE/${rootPath}/target`
-    //   let excludePath = []
-
-    //   let result = null
-
-    //   before(async () => {
-
-    //     let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
-    //     result = await archive.runOnce()
-
-    //     await wait(1000)
-
-    //     result = await archive.runOnce()
-
-    //   })
-
-    //   it('should have created 0 paths', () => {
-    //     Assert.equal(result.statistic.countOfCreated, 0)
-    //   })
-
-    //   it('should have updated 0 paths', () => {
-    //     Assert.equal(result.statistic.countOfUpdated, 0)
-    //   })
-
-    // })
-
     describe('(with an updated file in source)', () => {
 
       let rootPath = 'resource/test/library/archive/updated'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
+        let archive = Archive.createArchive(sourcePath, targetPath)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -184,13 +152,12 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/deleted'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
 
       let result = null
 
       before(async () => {
 
-        let archive = Archive.createArchive(sourcePath, targetPath, excludePath)
+        let archive = Archive.createArchive(sourcePath, targetPath)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await archive.runOnce()
@@ -230,12 +197,13 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/excluded'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = 'b.txt'
+      let includePath = []
+      let excludePath = [ 'b.txt' ]
 
       let result = null
 
       before(async () => {
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, includePath, excludePath).runOnce()
       })
 
       it('should create the not excluded file', async () => {
@@ -264,18 +232,83 @@ describe('archive', () => {
 
     })
 
+    describe('(with an included file in source)', () => {
+
+      let rootPath = 'resource/test/library/archive/included'
+      let sourcePath = `${rootPath}/source`
+      let targetPath = `${rootPath}/target`
+      let includePath = [ '*/', 'configuration.json' ]
+      let excludePath = [ '*' ]
+
+      let result = null
+
+      before(async () => {
+
+        Configuration.merge({
+          'parameter': {
+            'rsync': {
+              '--prune-empty-dirs': true
+            }
+          }
+        })
+            
+        result = await Archive.createArchive(sourcePath, targetPath, includePath, excludePath).runOnce()
+
+      })
+
+      it('should create the included file', async () => {
+        Assert.isTrue(await FileSystem.pathExists(`${targetPath}/content/.lotho/configuration.json`))
+      })
+
+      it('should not create the excluded file', async () => {
+        Assert.isFalse(await FileSystem.pathExists(`${targetPath}/content/.lotho/1.lock`))
+      })
+
+      it('should not create the excluded file', async () => {
+        Assert.isFalse(await FileSystem.pathExists(`${targetPath}/content/.lotho/1.log`))
+      })
+
+      it('should have created 3 paths', () => {
+        Assert.equal(result.statistic.countOfCreated, 3)
+      })
+
+      it('should have updated 1 paths', () => {
+        Assert.equal(result.statistic.countOfUpdated, 1)
+      })
+
+      it('should have deleted 0 paths', () => {
+        Assert.equal(result.statistic.countOfDeleted, 0)
+      })
+
+      after(async () => {
+
+        await FileSystem.remove(`${targetPath}/content`)
+
+        Configuration.merge({
+          'parameter': {
+            'rsync': {
+              '--prune-empty-dirs': false
+            }
+          }
+        })
+            
+      })
+
+    })
+
     describe('(with an excluded file in target)', () => {
 
       let rootPath = 'resource/test/library/archive/excluded'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = 'b.txt'
+      let includePath = []
+      let excludePath = [ 'b.txt' ]
 
       let result = null
 
       before(async () => {
         result = await Archive.createArchive(sourcePath, targetPath, []).runOnce()
-        result = await Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        result = await Archive.createArchive(sourcePath, targetPath, includePath, excludePath).runOnce()
       })
 
       it('should delete the excluded file', async () => {
@@ -314,10 +347,9 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/multiple'
       let sourcePath = [ `${rootPath}/source/a`, `${rootPath}/source/b` ]
       let targetPath = `${rootPath}/target`
-      let excludePath = []
 
       before(() => {
-        return Archive.createArchive(sourcePath, targetPath, excludePath).runOnce()
+        return Archive.createArchive(sourcePath, targetPath).runOnce()
       })
 
       it('should create the file', async () => {
@@ -357,14 +389,13 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/empty'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
       let schedule = '*/5 * * * * *'
 
       let archive = null
       let result = null
 
       before(async () => {
-        result = await onCompleted(archive = Archive.createArchive(sourcePath, targetPath, excludePath), schedule)
+        result = await onCompleted(archive = Archive.createArchive(sourcePath, targetPath), schedule)
       })
 
       it('should create the content directory', async () => {
@@ -395,7 +426,6 @@ describe('archive', () => {
       let rootPath = 'resource/test/library/archive/updated'
       let sourcePath = `${rootPath}/source`
       let targetPath = `${rootPath}/target`
-      let excludePath = []
       let schedule = '*/5 * * * * *'
 
       let archive = null
@@ -403,7 +433,7 @@ describe('archive', () => {
 
       before(async () => {
 
-        archive = Archive.createArchive(sourcePath, targetPath, excludePath)
+        archive = Archive.createArchive(sourcePath, targetPath)
 
         await FileSystem.writeJson(`${sourcePath}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
         result = await onCompleted(archive, schedule)
@@ -477,6 +507,7 @@ describe('archive', () => {
 
   after(() => {
     Configuration.clear()
+    Configuration.merge(Configuration.test)
   })
 
 })

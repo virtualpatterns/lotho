@@ -26,10 +26,8 @@ Command
   .command('run-once [name]')
   .description('Archive the source directories according to the configuration')
   .action((name) => {
-    return Command.execute(() => {
-      return Promise.all(Configuration.archive
-        .filter((archive) => name ? archive.name == name : true)
-        .map((archive) => Archive.createArchive(archive.path.source, archive.path.target, archive.path.exclude).runOnce()))
+    return Command.onArchive(name, (archive) => {
+      return Archive.createArchive(archive.path.source, archive.path.target, archive.path.include, archive.path.exclude).runOnce()
     })
   })
 
@@ -37,10 +35,8 @@ Command
   .command('run-schedule <name>')
   .description('Schedule the archive according to the configuration')
   .action((name) => {
-    return Command.execute(() => {
-      Configuration.archive
-        .filter((archive) => archive.name == name)
-        .forEach((archive) => Archive.createArchive(archive.path.source, archive.path.target, archive.path.exclude).startSchedule(archive.schedule))
+    return Command.onArchive(name, (archive) => {
+      return Archive.createArchive(archive.path.source, archive.path.target, archive.path.include, archive.path.exclude).startSchedule(archive.schedule)
     })
   })
 
@@ -48,10 +44,8 @@ Command
   .command('start-archive [name]')
   .description('Start both the process manager and the schedule(s)')
   .action((name) => {
-    return Command.execute(async () => {
-      for (let archive of Configuration.archive.filter((archive) => name ? archive.name == name : true)) {
-        await ProcessManager.startArchive(archive.name)
-      }
+    return Command.onArchive(name, (archive) => {
+      return ProcessManager.startArchive(archive.name)
     })
   })
 
@@ -59,10 +53,8 @@ Command
   .command('stop-archive [name]')
   .description('Stop and delete the schedule(s) (the process manager remains running)')
   .action((name) => {
-    return Command.execute(async () => {
-      for (let archive of Configuration.archive.filter((archive) => name ? archive.name == name : true)) {
-        await ProcessManager.stopArchive(archive.name)
-      }
+    return Command.onArchive(name, (archive) => {
+      return ProcessManager.stopArchive(archive.name)
     })
   })
 
@@ -105,7 +97,7 @@ Command.execute = async function (fn) {
     try {
 
       Process.on('SIGHUP', () => {
-        Log.debug('Process.once(\'SIGHUP\', () => { ... })')
+        Log.debug('Process.on(\'SIGHUP\', () => { ... })')
 
         if (Configuration.logPath == 'console') {
           Log.createFormattedLog({ 'level': Configuration.logLevel })
@@ -130,7 +122,6 @@ Command.execute = async function (fn) {
     }
     catch (error) {
       
-      delete error.name
       Log.error(error, 'catch (error) { ... }')
   
       Process.exit(2)
@@ -148,4 +139,33 @@ Command.execute = async function (fn) {
   
 }
 
+Command.onArchive = function (name, fn) {
+
+  return Command.execute(async () => {
+
+    let archive = Configuration.archive.filter((archive) => name ? archive.name == name : true)
+
+    for (let _archive of archive) {
+
+      Log.trace({ _archive })
+
+      try {
+        await fn(_archive)
+      }
+      catch (error) {
+
+        if (archive.length == 1) {
+          throw error
+        } else {
+          Log.error(error, 'catch (error) { ... }')
+        }
+
+      }
+
+    }
+
+  })
+
+}
+  
 export default Command

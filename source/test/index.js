@@ -1,12 +1,27 @@
 import '@babel/polyfill'
-import { Log } from '@virtualpatterns/mablung'
+import { FileSystem, Log, Path } from '@virtualpatterns/mablung'
 import Source from 'source-map-support'
 
 import Configuration from '../configuration'
 
 Source.install({ 'handleUncaughtExceptions': false })
 
-Log.createFormattedLog({ 'level': Configuration.test.logLevel }, Configuration.test.logPath)
+before(async () => {
+
+  Configuration.merge(Configuration.test)
+
+  if (Configuration.logPath == 'console') {
+    Log.createFormattedLog({ 'level': Configuration.logLevel })
+  }
+  else {
+    await FileSystem.mkdir(Path.dirname(Configuration.logPath), { 'recursive': true })
+    await FileSystem.remove(Configuration.logPath)
+    Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
+  }
+
+  Log.debug(Configuration.line)
+
+})
 
 require('./library/archive')
 require('./library/process-manager')

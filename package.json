@@ -29,7 +29,7 @@
     "jake": "npm run build-jake && jake",
     "build-all": "npm run build-jake && jake build"
   },
-  "version": "0.0.4-115",
+  "version": "0.0.4-231",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",
@@ -43,12 +43,13 @@
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
     "@pwn/is": "^1.0.2",
-    "@virtualpatterns/mablung": "0.0.25",
+    "@virtualpatterns/mablung": "0.0.26",
     "commander": "^2.19.0",
     "cron": "^1.6.0",
     "deepmerge": "^3.0.0",
     "luxon": "^1.4.5",
     "pm2": "^3.2.4",
+    "sanitize-filename": "^1.6.1",
     "source-map-support": "^0.5.9",
     "uuid": "^3.3.2"
   }

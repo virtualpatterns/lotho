@@ -20,15 +20,17 @@ describe('configuration', () => {
 
     after(() => {
       Configuration.clear()
+      Configuration.merge(Configuration.test)
     })
 
   })
 
   describe('clear()', () => {
 
-    before(() => {
+    before(async () => {
       Configuration.merge(configurationPath)
       Configuration.clear()
+      Configuration.merge(Configuration.test)
     })
 
     it(`should not be equal to '${Path.trim(configurationPath)}'`, () => {

@@ -17,11 +17,22 @@ archivePrototype.startSchedule = function (schedule) {
 
   if (Is.null(this.job)) { 
 
+    this.sourcePath.forEach((path, index) => {
+      Log.debug(`${index == 0 ? 'Scheduling archive from' : 'and'} '${Path.trim(path)}' ...`)
+    })
+
     this.job = new Job(schedule, this.onScheduled.bind(this), this.onStopped.bind(this)) // , false, Configuration.timeZone)
     this.job.start()
       
-    Process.once('SIGINT', this.stopSchedule)
-    Process.once('SIGTERM', this.stopSchedule)
+    Process.once('SIGINT', this.SIGINT = () => {
+      Log.debug('Process.once(\'SIGINT\', () => { ... })')
+      this.stopSchedule()
+    })
+
+    Process.once('SIGTERM', this.SIGTERM = () => {
+      Log.debug('Process.once(\'SIGTERM\', () => { ... })')
+      this.stopSchedule()
+    })
   
     Log.debug(`Next scheduled archive ${this.getNextRun().toFormat(Configuration.format.longSchedule)}`)
 
@@ -34,13 +45,18 @@ archivePrototype.stopSchedule = function () {
 
   if (Is.not.null(this.job)) { 
 
-    Process.off('SIGTERM', this.stopSchedule)
-    Process.off('SIGINT', this.stopSchedule)
+    this.sourcePath.forEach((path, index) => {
+      Log.debug(`${index == 0 ? 'Unscheduling archive from' : 'and'} '${Path.trim(path)}' ...`)
+    })
+
+    Process.off('SIGINT', this.SIGINT)
+    this.SIGINT = null
+
+    Process.off('SIGTERM', this.SIGTERM)
+    this.SIGTERM = null
 
     this.job.stop()
     this.job = null
-
-    Log.debug('No next scheduled archive')
 
   }
 
@@ -51,16 +67,16 @@ archivePrototype.getNextRun = function () {
 }
 
 archivePrototype.onScheduled = async function () {
+  Log.trace('Archive.onScheduled()')
 
   try {
 
     let lockPath = Path.join(Configuration.path.home, `${this.id}.lock`)
 
     await FileSystem.mkdir(Path.dirname(lockPath), { 'recursive': true })
-    await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf8', 'flag': 'wx' })
+    await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
 
     Log.debug(Configuration.line)
-    Log.trace('Archive.onScheduled()')
   
     try {
 
@@ -73,7 +89,6 @@ archivePrototype.onScheduled = async function () {
 
     }
     catch (error) {
-      delete error.name
       Log.trace(error, 'catch (error) { ... })')
     }
     finally {
@@ -103,10 +118,15 @@ archivePrototype.runOnce = function () {
     let stamp = Configuration.now().toFormat(Configuration.format.stamp)
 
     try {
-    
+
+      this.sourcePath.forEach((path, index) => {
+        Log.debug(`${index == 0 ? 'Archiving from' : 'and'} '${Path.trim(path)}' ...`)
+      })
+
       let parameter = [
         ...Configuration.conversion.toParameter(Configuration.parameter.rsync),
         `--backup-dir=../${stamp}`, // ${Path.join(this.targetPath.replace(/^[^:]+:/, ''), stamp)}`,
+        ...this.includePath.map((path) => `--include=${path}`),
         ...this.excludePath.map((path) => `--exclude=${path}`),
         ...this.sourcePath.map((path) => `${path}/`), // ...this.sourcePath
         Path.join(this.targetPath, 'content')
@@ -122,6 +142,7 @@ archivePrototype.runOnce = function () {
       let stderr = ''
 
       process.stdout.on('data', (data) => {
+        // Log.trace(`ChildProcess.stdout.on('data', (data) => { ... } '${Path.trim(this.sourcePath[0])}'`)
 
         let dataAsString = data.toString()
         dataAsString.split('\n').forEach((line) => {
@@ -182,6 +203,7 @@ archivePrototype.runOnce = function () {
       })
       
       process.stderr.on('data', (data) => {
+        // Log.trace(`ChildProcess.stderr.on('data', (data) => { ... } '${Path.trim(this.sourcePath[0])}'`)
         let dataAsString = data.toString()
         stderr += dataAsString.toString()
       })
@@ -190,7 +212,6 @@ archivePrototype.runOnce = function () {
 
         if (!isResolved && !isRejected) {
 
-          delete error.name
           Log.trace(error, `ChildProcess.on('error'), (error) => { ... }) ${Configuration.conversion.toDuration(Process.hrtime(start)).toFormat(Configuration.format.longDuration)}`)
 
           isRejected = true
@@ -211,13 +232,8 @@ archivePrototype.runOnce = function () {
             
             let statistic = Archive.getStatistic(stdout)
 
-            Log.debug(`Scanned: ${statistic.countOfScanned}`)
-            Log.debug(`Created: ${statistic.countOfCreated}`)
-            Log.debug(`Updated: ${statistic.countOfUpdated}`)
-
-            if (statistic.countOfDeleted) {
-              Log.debug(`Deleted: ${statistic.countOfDeleted}`)
-            }
+            Log.debug(`Archived to '${Path.trim(this.targetPath)}'`)
+            Log.debug(`Scanned ${statistic.countOfScanned} paths, created ${statistic.countOfCreated} paths, updated ${statistic.countOfUpdated} paths${statistic.countOfDeleted ? `, deleted ${statistic.countOfDeleted} paths` : ''}`)
   
             isResolved = true
             resolve({ stamp, statistic })
@@ -252,15 +268,23 @@ archivePrototype.runOnce = function () {
 
 }
 
+archivePrototype.purge = async function () {
+  Log.trace('Archive.purge()')
+
+  return Archive.purge(this.targetPath)
+  
+}
+
 const Archive = Object.create({})
 
-Archive.createArchive = function (sourcePath, targetPath, excludePath, prototype = archivePrototype) {
-  Log.trace({ sourcePath, targetPath, excludePath }, 'Archive.createArchive(sourcePath, targetPath, excludePath, prototype)')
+Archive.createArchive = function (sourcePath, targetPath, includePath = [], excludePath = [], prototype = archivePrototype) {
+  Log.trace({ sourcePath, targetPath, includePath, excludePath }, 'Archive.createArchive(sourcePath, targetPath, includePath, excludePath, prototype)')
 
   let archive = Object.create(prototype)
 
   archive.sourcePath = Is.array(sourcePath) ? sourcePath : [ sourcePath ]
   archive.targetPath = targetPath
+  archive.includePath = Is.array(includePath) ? includePath : [ includePath ]
   archive.excludePath = Is.array(excludePath) ? excludePath : [ excludePath ]
 
   archive.id = UUID()

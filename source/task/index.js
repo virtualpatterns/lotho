@@ -1,16 +1,23 @@
 import '@babel/polyfill'
 import Jake from 'jake'
-import { Log } from '@virtualpatterns/mablung'
+import { FileSystem, Log, Path } from '@virtualpatterns/mablung'
 
 import Configuration from '../configuration'
 
 Jake.addListener('start', () => {
 
-  Jake.rmRf(Configuration.task.logPath, { 'silent': true })
-  Jake.rmRf(Configuration.test.logPath, { 'silent': true })
+  Configuration.merge(Configuration.task)
 
-  Log.createFormattedLog({ 'level': Configuration.task.logLevel }, Configuration.task.logPath)
-  Log.debug('Jake.addListener(\'start\', () => { ... })')
+  if (Configuration.logPath == 'console') {
+    Log.createFormattedLog({ 'level': Configuration.logLevel })
+  }
+  else {
+    FileSystem.mkdirSync(Path.dirname(Configuration.logPath), { 'recursive': true })
+    FileSystem.removeSync(Configuration.logPath)
+    Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
+  }
+
+  Log.debug(Configuration.line)
   
 })
 
@@ -56,8 +63,4 @@ task('publish', [ 'test' ], { 'async': true }, () => {
     'git add package.json',
     'git commit --message="Increment version"'
   ], { 'printStderr': true, 'printStdout': true }, () => complete())
-})
-
-Jake.addListener('complete', () => {
-  Log.debug('Jake.addListener(\'complete\', () => { ... })')
 })

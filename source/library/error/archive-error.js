@@ -30,7 +30,7 @@ function ArchiveRunError() {
   Error.call(this)
   Error.captureStackTrace(this, ArchiveRunError)
 
-  this.message = 'Unable to synchronize source and target directories'
+  this.message = 'Unable to archive source directories'
 
 }
 

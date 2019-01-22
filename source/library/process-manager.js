@@ -1,7 +1,8 @@
 // import ChildProcess from 'child_process'
 import Is from '@pwn/is'
-import { Log } from '@virtualpatterns/mablung'
+import { Log, Path } from '@virtualpatterns/mablung'
 import _ProcessManager from 'pm2'
+import Sanitize from 'sanitize-filename'
 import Utilities from 'util'
 
 import Configuration from '../configuration'
@@ -22,6 +23,12 @@ ProcessManager.startArchive = async function (name) {
 
     try {
 
+      let logPath = Configuration.logPath
+
+      let logParentPath = Path.dirname(logPath)
+      let logExtension = Path.extname(logPath)
+      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(name)}`
+
       let option = {
         'apps': [
           {
@@ -29,16 +36,20 @@ ProcessManager.startArchive = async function (name) {
             'script': Configuration.path.start,
             'args': [
               ...Configuration.conversion.toParameter(Configuration.parameter.start),
+              '--configurationPath', Configuration.path.configuration,
+              '--logLevel', Configuration.logLevel,
+              '--logPath', Path.join(logParentPath, `${logName}${logExtension}`),
               'run-schedule', name
             ]
           }
         ]
       }
   
+      Log.debug(`Starting '${name}' ...`)
+
       Log.trace({ option }, 'ProcessManager.start(option)')
       let [ process ] = await this.start(option)
 
-      Log.debug('ProcessManager.start(option)')
       Log.debug(`Name: '${process.pm2_env.name}'`)
       Log.debug(`PID: ${process.pid}`)
       Log.debug(`Status: '${process.pm2_env.status}'`)
@@ -67,6 +78,8 @@ ProcessManager.stopArchive = async function (name) {
 
   try {
 
+    Log.debug(`Stopping '${name}' ...`)
+
     Log.trace(`ProcessManager.stop('${name}')`)
     await this.stop(name)
 
@@ -86,7 +99,7 @@ ProcessManager.getPID = async function (name) {
 
   try {
 
-    Log.trace(`ProcessManager.describe('${name}')`)
+    Log.trace(`ProcessManager.describe('${name}') ...`)
     let [ status ] = await this.describe(name)
 
     return status ? status.pid : null

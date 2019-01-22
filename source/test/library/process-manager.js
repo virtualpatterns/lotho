@@ -1,7 +1,6 @@
 import { assert as Assert } from 'chai'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
 
-import Package from '../../../package.json'
 import ProcessManager from '../../library/process-manager'
 import Configuration from '../../configuration'
 
@@ -11,7 +10,7 @@ describe('process-manager', () => {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive`)
     let configurationPath = `${rootPath}/configuration.json`
-    let name = Package.name
+    let name = 'startArchive'
     let targetPath = `${rootPath}/target`
 
     let pid = null 
@@ -33,6 +32,7 @@ describe('process-manager', () => {
       await ProcessManager.stopArchive(name)
       await FileSystem.remove(`${targetPath}/content`)
       Configuration.clear()
+      Configuration.merge(Configuration.test)
     })
 
   })
@@ -41,7 +41,7 @@ describe('process-manager', () => {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
     let configurationPath = `${rootPath}/configuration.json`
-    let name = Package.name
+    let name = 'stopArchive'
     let targetPath = `${rootPath}/target`
 
     let pid = null 
@@ -59,6 +59,7 @@ describe('process-manager', () => {
     after(async () => {
       await FileSystem.remove(`${targetPath}/content`)
       Configuration.clear()
+      Configuration.merge(Configuration.test)
     })
 
   })
