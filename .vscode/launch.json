@@ -20,10 +20,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Sandbox Startup",
-      "program": "${workspaceFolder}/distributable/sandbox/startup.js",
+      "name": "Launch ...",
+      "program": "${workspaceFolder}/distributable/lotho.js",
       "preLaunchTask": "Build",
-      "args": [],
+      "args": [
+        "start-archive", "0"
+      ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "openOnSessionStart"
     }

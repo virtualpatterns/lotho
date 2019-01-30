@@ -6,7 +6,7 @@ import Configuration from '../configuration'
 
 Source.install({ 'handleUncaughtExceptions': false })
 
-before(async () => {
+before(async function () {
 
   Configuration.merge(Configuration.test)
 
@@ -23,6 +23,8 @@ before(async () => {
 
 })
 
+require('./library/archive/local')
+require('./library/archive/remote')
 require('./library/archive')
 require('./library/process-manager')
 require('./configuration')

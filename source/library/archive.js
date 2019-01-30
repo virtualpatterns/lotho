@@ -1,27 +1,27 @@
 import ChildProcess from 'child_process'
 import { CronJob as Job } from 'cron'
-import { DateTime } from 'luxon'
+import { DateTime, Interval } from 'luxon'
 import EventEmitter from 'events'
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
 import Is from '@pwn/is'
+import Merge from 'deepmerge'
+import Property from 'object-path'
 import UUID from 'uuid/v4'
 
 import Configuration from '../configuration'
 
-import { ArchiveRunError } from './error/archive-error'
+import { ArchiveClassNotFoundError, ArchiveLockError, ArchiveSynchronizeError } from './error/archive-error'
 
 const archivePrototype = Object.create(EventEmitter.prototype)
 
-archivePrototype.startSchedule = function (schedule) {
-  Log.trace(`Archive.startSchedule('${schedule}')`)
+archivePrototype.startSchedule = function () {
+  Log.trace('Archive.startSchedule()')
 
   if (Is.null(this.job)) { 
 
-    this.sourcePath.forEach((path, index) => {
-      Log.debug(`${index == 0 ? 'Scheduling archive from' : 'and'} '${Path.trim(path)}' ...`)
-    })
+    Log.debug(`Scheduling archive '${this.option.name}' ...`)
 
-    this.job = new Job(schedule, this.onScheduled.bind(this), this.onStopped.bind(this)) // , false, Configuration.timeZone)
+    this.job = new Job(this.option.schedule, this.onScheduled.bind(this), this.onStopped.bind(this))
     this.job.start()
       
     Process.once('SIGINT', this.SIGINT = () => {
@@ -34,7 +34,7 @@ archivePrototype.startSchedule = function (schedule) {
       this.stopSchedule()
     })
   
-    Log.debug(`Next scheduled archive ${this.getNextRun().toFormat(Configuration.format.longSchedule)}`)
+    Log.debug(`Next scheduled for '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
 
   }
 
@@ -45,9 +45,7 @@ archivePrototype.stopSchedule = function () {
 
   if (Is.not.null(this.job)) { 
 
-    this.sourcePath.forEach((path, index) => {
-      Log.debug(`${index == 0 ? 'Unscheduling archive from' : 'and'} '${Path.trim(path)}' ...`)
-    })
+    Log.debug(`Unscheduling archive '${this.option.name}' ...`)
 
     Process.off('SIGINT', this.SIGINT)
     this.SIGINT = null
@@ -62,34 +60,36 @@ archivePrototype.stopSchedule = function () {
 
 }
 
-archivePrototype.getNextRun = function () {
+archivePrototype.getNextSchedule = function () {
   return Is.not.null(this.job) ? DateTime.fromJSDate(this.job.nextDates(1)[0].toDate()) : null
 }
 
 archivePrototype.onScheduled = async function () {
+  Log.debug(Configuration.line)
   Log.trace('Archive.onScheduled()')
-
+  
   try {
 
-    let lockPath = Path.join(Configuration.path.home, `${this.id}.lock`)
+    let lockPath = Path.join(Configuration.path.home, `archive.${this.id}.lock`)
 
-    await FileSystem.mkdir(Path.dirname(lockPath), { 'recursive': true })
-    await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
+    try {
+      await FileSystem.mkdir(Path.dirname(lockPath), { 'recursive': true })
+      await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
+    }
+    catch (error) {
+      Log.error(error, 'catch (error) { ... })')
+      throw new ArchiveLockError(lockPath)
+    }
 
-    Log.debug(Configuration.line)
-  
     try {
 
-      let result = await this.runOnce()
-      result.nextRun = this.getNextRun()
+      let result = await this.archive()
+      result.nextSchedule = this.getNextSchedule()
 
-      Log.debug(`Next scheduled archive ${result.nextRun.toFormat(Configuration.format.longSchedule)}`)
+      Log.debug(`Next scheduled for '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
 
       this.emit('completed', result)
 
-    }
-    catch (error) {
-      Log.trace(error, 'catch (error) { ... })')
     }
     finally {
       await FileSystem.unlink(lockPath)
@@ -97,7 +97,7 @@ archivePrototype.onScheduled = async function () {
       
   }
   catch (error) {
-    Log.trace(error, 'catch (error) { ... })')
+    Log.error(error, 'catch (error) { ... })')
   }
 
 }
@@ -107,42 +107,53 @@ archivePrototype.onStopped = function () {
   this.emit('stopped')
 }
 
-archivePrototype.runOnce = function () {
-  Log.trace('Archive.runOnce()')
+archivePrototype.archive = async function (stamp = Configuration.now()) {
+  Log.trace(`Archive.archive('${stamp.toFormat(Configuration.format.stamp)}')`)
+
+  Log.debug(`Archiving '${this.option.name}' ...`)
+  let start = Process.hrtime()
+
+  let synchronizeResult = await this.synchronize(stamp)
+  let purgeResult = await this.purge(stamp)
+
+  let result = {
+    'stamp': stamp,
+    'statistic': Merge(synchronizeResult, purgeResult)
+  }
+
+  Log.debug({ 'stamp': result.stamp.toFormat(Configuration.format.stamp), 'statistic': result.statistic }, `Archived '${this.option.name}' in ${Configuration.conversion.toDuration(Process.hrtime(start)).toFormat(Configuration.format.shortDuration)}`)
+
+  return result
+
+}
+
+archivePrototype.synchronize = function (stamp) {
+  Log.trace(`Archive.synchronize('${stamp.toFormat(Configuration.format.stamp)}')`)
 
   return new Promise(async (resolve, reject) => {
 
     let isRejected = false
     let isResolved = false
 
-    let stamp = Configuration.now().toFormat(Configuration.format.stamp)
-
     try {
-
-      this.sourcePath.forEach((path, index) => {
-        Log.debug(`${index == 0 ? 'Archiving from' : 'and'} '${Path.trim(path)}' ...`)
-      })
 
       let parameter = [
         ...Configuration.conversion.toParameter(Configuration.parameter.rsync),
-        `--backup-dir=../${stamp}`, // ${Path.join(this.targetPath.replace(/^[^:]+:/, ''), stamp)}`,
-        ...this.includePath.map((path) => `--include=${path}`),
-        ...this.excludePath.map((path) => `--exclude=${path}`),
-        ...this.sourcePath.map((path) => `${path}/`), // ...this.sourcePath
-        Path.join(this.targetPath, 'content')
+        `--backup-dir=..${Path.sep}${stamp.toFormat(Configuration.format.stamp)}`,
+        ...this.option.path.include.map((path) => `--include=${path}`),
+        ...this.option.path.exclude.map((path) => `--exclude=${path}`),
+        ...this.option.path.source.map((path) => `${path}${Path.sep}`),
+        Path.join(this.option.path.target, Configuration.name.content)
       ]
       
       Log.trace({ parameter }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter) ...`)
       let process = ChildProcess.spawn(Configuration.path.rsync, parameter)
 
-      let start = Process.hrtime()
       let progress = Process.hrtime()
-
       let stdout = ''
       let stderr = ''
 
       process.stdout.on('data', (data) => {
-        // Log.trace(`ChildProcess.stdout.on('data', (data) => { ... } '${Path.trim(this.sourcePath[0])}'`)
 
         let dataAsString = data.toString()
         dataAsString.split('\n').forEach((line) => {
@@ -203,7 +214,6 @@ archivePrototype.runOnce = function () {
       })
       
       process.stderr.on('data', (data) => {
-        // Log.trace(`ChildProcess.stderr.on('data', (data) => { ... } '${Path.trim(this.sourcePath[0])}'`)
         let dataAsString = data.toString()
         stderr += dataAsString.toString()
       })
@@ -212,10 +222,10 @@ archivePrototype.runOnce = function () {
 
         if (!isResolved && !isRejected) {
 
-          Log.trace(error, `ChildProcess.on('error'), (error) => { ... }) ${Configuration.conversion.toDuration(Process.hrtime(start)).toFormat(Configuration.format.longDuration)}`)
+          Log.error(error, 'ChildProcess.on(\'error\'), (error) => { ... })')
 
           isRejected = true
-          reject(new ArchiveRunError())
+          reject(new ArchiveSynchronizeError(this.option))
 
         }
 
@@ -225,26 +235,21 @@ archivePrototype.runOnce = function () {
 
         if (!isResolved && !isRejected) {
 
-          Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? '${signal}' : signal}) => { ... }) ${Configuration.conversion.toDuration(Process.hrtime(start)).toFormat(Configuration.format.longDuration)}`)
+          Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? `'${signal}'` : signal}) => { ... })`)
           if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
 
           if (code == 0) {
-            
-            let statistic = Archive.getStatistic(stdout)
 
-            Log.debug(`Archived to '${Path.trim(this.targetPath)}'`)
-            Log.debug(`Scanned ${statistic.countOfScanned} paths, created ${statistic.countOfCreated} paths, updated ${statistic.countOfUpdated} paths${statistic.countOfDeleted ? `, deleted ${statistic.countOfDeleted} paths` : ''}`)
-  
             isResolved = true
-            resolve({ stamp, statistic })
+            resolve(this.getSynchronizeStatistic(stdout))
 
           }
           else {
   
-            if (Is.not.emptyString(stderr)) Log.debug(`\n\n${stderr}`)
+            if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
   
             isRejected = true
-            reject(new ArchiveRunError())
+            reject(new ArchiveSynchronizeError())
     
           }
           
@@ -268,26 +273,41 @@ archivePrototype.runOnce = function () {
 
 }
 
-archivePrototype.purge = async function () {
-  Log.trace('Archive.purge()')
+archivePrototype.getSynchronizeStatistic = function (stdout) {
+  Log.trace('Archive.getSynchronizeStatistic(stdout)')
 
-  return Archive.purge(this.targetPath)
-  
+  return {
+    'countOfScanned': Archive.getCountOfScanned(stdout),
+    'countOfCreated': Archive.getCountOfCreated(stdout),
+    'countOfUpdated': Archive.getCountOfUpdated(stdout)
+  }
+
+}
+
+archivePrototype.purge = function (stamp) {
+  Log.trace(`Archive.purge('${stamp.toFormat(Configuration.format.stamp)}')`)
+
+  return {
+    'countOfPurged': 0
+  }
+
 }
 
 const Archive = Object.create({})
 
-Archive.createArchive = function (sourcePath, targetPath, includePath = [], excludePath = [], prototype = archivePrototype) {
-  Log.trace({ sourcePath, targetPath, includePath, excludePath }, 'Archive.createArchive(sourcePath, targetPath, includePath, excludePath, prototype)')
+Archive.archiveClass = []
+
+Archive.createArchive = function (option, prototype = archivePrototype) {
+  Log.trace(option, 'Archive.createArchive(option, prototype)')
+
+  option.path.source = Is.array(option.path.source) ? option.path.source : [ option.path.source ]
+  option.path.include = Is.array(option.path.include = Property.get(option.path, 'include', []) ) ? option.path.include : [ option.path.include ]
+  option.path.exclude = Is.array(option.path.exclude = Property.get(option.path, 'exclude', []) ) ? option.path.exclude : [ option.path.exclude ]
 
   let archive = Object.create(prototype)
 
-  archive.sourcePath = Is.array(sourcePath) ? sourcePath : [ sourcePath ]
-  archive.targetPath = targetPath
-  archive.includePath = Is.array(includePath) ? includePath : [ includePath ]
-  archive.excludePath = Is.array(excludePath) ? excludePath : [ excludePath ]
-
   archive.id = UUID()
+  archive.option = option
   archive.job = null
 
   return archive
@@ -302,64 +322,52 @@ Archive.isArchive = function (archive) {
   return archivePrototype.isPrototypeOf(archive)
 }
 
-Archive.getStatistic = function (stdout) {
+Archive.isArchiveClass = function () {
+  return false
+}
 
-  return {
-    'countOfScanned': this.getCountOfScanned(stdout),
-    'countOfCreated': this.getCountOfCreated(stdout),
-    'countOfUpdated': this.getCountOfUpdated(stdout),
-    'countOfDeleted': this.getCountOfDeleted(stdout)
+Archive.registerArchiveClass = function(archiveClass = this) {
+  this.archiveClass.push(archiveClass)
+}
+
+Archive.selectArchiveClass = function(option) {
+
+  for (let archiveClass of this.archiveClass) {
+    if (archiveClass.isArchiveClass(option)) {
+      return archiveClass
+    }
   }
 
+  throw new ArchiveClassNotFoundError(option)
+
+}
+
+Archive.selectArchive = function (option) {
+  return this.selectArchiveClass(option).createArchive(option)
 }
 
 Archive.getCountOfScanned = function (stdout) {
-
-  let pattern = Configuration.pattern.countOfScanned
-  let match = null
-
-  if (Is.not.null(match = pattern.exec(stdout))) {
-  
-    let [ , countOfScannedAsString ] = match
-    let countOfScanned = parseInt(countOfScannedAsString.replace(/,/g, ''))
-
-    return countOfScanned
-
-  }
-
-  return null
-
+  return this.getIntegerStatistic(Configuration.pattern.countOfScanned, stdout)
 }
 
 Archive.getCountOfCreated = function (stdout) {
-
-  let pattern = Configuration.pattern.countOfCreated
-  let match = null
-
-  if (Is.not.null(match = pattern.exec(stdout))) {
-  
-    let [ , countOfCreatedAsString ] = match
-    let countOfCreated = parseInt(countOfCreatedAsString.replace(/,/g, ''))
-
-    return countOfCreated
-
-  }
-
-  return null
-
+  return this.getIntegerStatistic(Configuration.pattern.countOfCreated, stdout)
 }
 
 Archive.getCountOfUpdated = function (stdout) {
+  return this.getIntegerStatistic(Configuration.pattern.countOfUpdated, stdout)
+}
 
-  let pattern = Configuration.pattern.countOfUpdated
+Archive.getIntegerStatistic = function (pattern, stdout) {
+
   let match = null
 
   if (Is.not.null(match = pattern.exec(stdout))) {
   
-    let [ , countOfUpdatedAsString ] = match
-    let countOfUpdated = parseInt(countOfUpdatedAsString.replace(/,/g, ''))
+    let [ , statisticAsString ] = match
+    let statistic = parseInt(statisticAsString.replace(/,/g, ''))
 
-    return countOfUpdated
+    return statistic
 
   }
 
@@ -367,21 +375,58 @@ Archive.getCountOfUpdated = function (stdout) {
 
 }
 
-Archive.getCountOfDeleted = function (stdout) {
+Archive.isExpired = function (current, previous, next) {
+  Log.trace(`Archive.isExpired('${current.toFormat(Configuration.format.stamp)}', '${previous.toFormat(Configuration.format.stamp)}', '${next.toFormat(Configuration.format.stamp)}')`)
 
-  let pattern = Configuration.pattern.countOfDeleted
-  let match = null
+  if (previous < next && next < current) {
 
-  if (Is.not.null(match = pattern.exec(stdout))) {
-  
-    let [ , countOfDeletedAsString ] = match
-    let countOfDeleted = parseInt(countOfDeletedAsString.replace(/,/g, ''))
+    let age = Interval.fromDateTimes(previous, current).toDuration()
+    let isExpired = false
 
-    return countOfDeleted
+    switch (true) {
+      case age.as('seconds') < 1.0:
+        isExpired = false
+        break
+      case age.as('minutes') < 1.0:
+        // true for all but last of second
+        isExpired = previous.second == next.second
+        break
+      case age.as('hours') < 1.0:
+        // true for all but last of minute
+        isExpired = previous.minute == next.minute
+        break
+      case age.as('days') < 1.0:
+        // true for all but last of hour
+        isExpired = previous.hour == next.hour
+        break
+      case age.as('months') < 1.0:
+        // true for all but last of day
+        isExpired = previous.day == next.day
+        break
+      case age.as('years') < 1.0:
+        // true for all but last of month
+        isExpired = previous.month == next.month
+        break
+      case age.as('years') >= 1.0:
+        // true for all but last of year
+        isExpired = previous.year == next.year
+        break
+      default:
+        isExpired = false
+    }
 
+    if (isExpired) {
+      Log.debug(`Expiring '${previous.toFormat(Configuration.format.stamp)}' ...`)
+    } else {
+      Log.debug(`Keeping  '${previous.toFormat(Configuration.format.stamp)}' ...`)
+    }
+
+    return isExpired
+      
   }
-
-  return null
+  else {
+    return false
+  }
 
 }
 

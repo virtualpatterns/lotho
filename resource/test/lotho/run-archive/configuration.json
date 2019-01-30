@@ -3,8 +3,8 @@
     {
       "name": "1",
       "path": {
-        "source": [ "resource/test/lotho/run-once/1/source" ],
-        "target": "resource/test/lotho/run-once/1/target",
+        "source": [ "resource/test/lotho/run-archive/1/source" ],
+        "target": "resource/test/lotho/run-archive/1/target",
         "exclude": [],
         "include": []
       },
@@ -13,8 +13,8 @@
     {
       "name": "1.5",
       "path": {
-        "source": [ "resource/test/lotho/run-once/1.5/source" ],
-        "target": "resource/test/lotho/run-once/1.5/target",
+        "source": [ "resource/test/lotho/run-archive/1.5/source" ],
+        "target": "resource/test/lotho/run-archive/1.5/target",
         "exclude": [],
         "include": []
       },
@@ -23,8 +23,8 @@
     {
       "name": "2",
       "path": {
-        "source": [ "resource/test/lotho/run-once/2/source" ],
-        "target": "resource/test/lotho/run-once/2/target",
+        "source": [ "resource/test/lotho/run-archive/2/source" ],
+        "target": "resource/test/lotho/run-archive/2/target",
         "exclude": [],
         "include": []
       },

@@ -15,7 +15,7 @@ ProcessManager.describe = Utilities.promisify(ProcessManager.describe)
 ProcessManager.stop = Utilities.promisify(ProcessManager.stop)
 ProcessManager.delete = Utilities.promisify(ProcessManager.delete)
 
-ProcessManager.startArchive = async function (name) {
+ProcessManager.startArchive = async function (option) {
 
   await this.connect()
 
@@ -27,28 +27,28 @@ ProcessManager.startArchive = async function (name) {
 
       let logParentPath = Path.dirname(logPath)
       let logExtension = Path.extname(logPath)
-      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(name)}`
+      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(option.name)}`
 
-      let option = {
+      let _option = {
         'apps': [
           {
-            'name': name,
+            'name': option.name,
             'script': Configuration.path.start,
             'args': [
               ...Configuration.conversion.toParameter(Configuration.parameter.start),
               '--configurationPath', Configuration.path.configuration,
               '--logLevel', Configuration.logLevel,
               '--logPath', Path.join(logParentPath, `${logName}${logExtension}`),
-              'run-schedule', name
+              'run-schedule', option.name
             ]
           }
         ]
       }
   
-      Log.debug(`Starting '${name}' ...`)
+      Log.debug(`Starting '${option.name}' ...`)
 
-      Log.trace({ option }, 'ProcessManager.start(option)')
-      let [ process ] = await this.start(option)
+      Log.trace({ _option }, 'ProcessManager.start(_option)')
+      let [ process ] = await this.start(_option)
 
       Log.debug(`Name: '${process.pm2_env.name}'`)
       Log.debug(`PID: ${process.pid}`)
@@ -72,19 +72,19 @@ ProcessManager.startArchive = async function (name) {
 
 }
 
-ProcessManager.stopArchive = async function (name) {
+ProcessManager.stopArchive = async function (option) {
 
   await this.connect()
 
   try {
 
-    Log.debug(`Stopping '${name}' ...`)
+    Log.debug(`Stopping '${option.name}' ...`)
 
-    Log.trace(`ProcessManager.stop('${name}')`)
-    await this.stop(name)
+    Log.trace(`ProcessManager.stop('${option.name}')`)
+    await this.stop(option.name)
 
-    Log.trace(`ProcessManager.delete('${name}')`)
-    await this.delete(name)
+    Log.trace(`ProcessManager.delete('${option.name}')`)
+    await this.delete(option.name)
 
   }
   finally {

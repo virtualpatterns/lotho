@@ -1,65 +1,89 @@
 import { assert as Assert } from 'chai'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
+import Sanitize from 'sanitize-filename'
 
 import ProcessManager from '../../library/process-manager'
 import Configuration from '../../configuration'
 
-describe('process-manager', () => {
+describe('process-manager', function () {
 
-  describe('startArchive(name)', () => {
+  describe('startArchive(archive)', function () {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive`)
     let configurationPath = `${rootPath}/configuration.json`
-    let name = 'startArchive'
-    let targetPath = `${rootPath}/target`
 
     let pid = null 
 
-    before(async () => {
+    before(async function () {
       Configuration.merge(configurationPath)
-      pid = (await ProcessManager.startArchive(name)).pid
+      pid = (await ProcessManager.startArchive(Configuration.archive[0])).pid
     })
   
-    it('should be a valid pid', () => {
+    it('should be a valid pid', function () {
       Process.kill(pid, 0)
     })
 
-    it('should create the content directory', () => {
-      return FileSystem.whenFileExists(1000, 20000, `${targetPath}/content`)
+    it('should create the content directory', function () {
+      return FileSystem.whenFileExists(1000, 20000, `${Configuration.archive[0].path.target}/${Configuration.name.content}`)
     })
 
-    after(async () => {
-      await ProcessManager.stopArchive(name)
-      await FileSystem.remove(`${targetPath}/content`)
+    after(async function () {
+
+      await ProcessManager.stopArchive(Configuration.archive[0])
+      await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
+
+      let logPath = Configuration.logPath
+
+      let logParentPath = Path.dirname(logPath)
+      let logExtension = Path.extname(logPath)
+      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(Configuration.archive[0].name)}`
+
+      await FileSystem.remove(Path.join(logParentPath, `${logName}${logExtension}`))
+
       Configuration.clear()
       Configuration.merge(Configuration.test)
+
     })
 
   })
 
-  describe('stopArchive(name)', () => {
+  describe('stopArchive(archive)', function () {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
     let configurationPath = `${rootPath}/configuration.json`
-    let name = 'stopArchive'
-    let targetPath = `${rootPath}/target`
 
     let pid = null 
 
-    before(async () => {
+    before(async function () {
+      
       Configuration.merge(configurationPath)
-      pid = (await ProcessManager.startArchive(name)).pid
-      await ProcessManager.stopArchive(name)
+      pid = (await ProcessManager.startArchive(Configuration.archive[0])).pid
+
+      await FileSystem.whenFileExists(1000, 20000, `${Configuration.archive[0].path.target}/${Configuration.name.content}`)
+
+      await ProcessManager.stopArchive(Configuration.archive[0])
+
     })
   
-    it('should not be a valid pid', () => {
+    it('should not be a valid pid', function () {
       Assert.throws(() => Process.kill(pid, 0))
     })
 
-    after(async () => {
-      await FileSystem.remove(`${targetPath}/content`)
+    after(async function () {
+
+      await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
+
+      let logPath = Configuration.logPath
+
+      let logParentPath = Path.dirname(logPath)
+      let logExtension = Path.extname(logPath)
+      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(Configuration.archive[0].name)}`
+
+      await FileSystem.remove(Path.join(logParentPath, `${logName}${logExtension}`))
+
       Configuration.clear()
       Configuration.merge(Configuration.test)
+
     })
 
   })

@@ -13,6 +13,7 @@ const configurationPrototype = {
   'conversion': {
     'toDuration': ([ seconds, nanoseconds ]) => Duration.fromMillis((seconds + nanoseconds / NANOSECONDS_PER_SECOND) * MILLISECONDS_PER_SECOND),
     'toParameter': (parameter) => {
+
       return Object.keys(parameter)
         .filter((name) => parameter[name])
         .map((name) => {
@@ -31,6 +32,7 @@ const configurationPrototype = {
     
         })
         .flat()
+        
     },
     'toSeconds': ([ seconds, nanoseconds ]) => (seconds + nanoseconds / NANOSECONDS_PER_SECOND).toFixed(2)
   },
@@ -40,7 +42,7 @@ const configurationPrototype = {
         'name': 'COMPUTER_NAME',
         'path': {
           'source': [ 
-            `${Process.env.HOME}/.lotho` 
+            Path.join(Process.env.HOME, '.lotho')
           ],
           'target': `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${COMPUTER_NAME}`,
           'include': [],
@@ -54,18 +56,26 @@ const configurationPrototype = {
       }
     ],
     'logLevel': 'debug',
-    'logPath': `${Process.env.HOME}/.lotho/lotho.log`
+    'logPath': Path.join(Process.env.HOME, '.lotho', 'lotho.log'),
+    'path': {
+      'rsync': '/usr/local/bin/rsync',
+      'privateKey': Path.join(Process.env.HOME, '.ssh', 'id_rsa')
+    }
   },
   'format': {
-    'longDuration': 'hh\'h\' mm\'m\' ss.SSSS\'s\'',
-    'longSchedule': '\'on\' DDDD \'at\' tt',
-    'stamp': 'x'
+    'shortDuration': 'hh\'h\' mm\'m\' ss.SSS\'s\'',
+    'longDuration': 'yy\'y\' MM\'mo\' dd\'d\' hh\'h\' mm\'m\' ss.SSS\'s\'',
+    'schedule': '\'on\' DDDD \'at\' tt',
+    'stamp': 'yyyy.LL.dd HH.mm.ss.SSSZZZ'
   },
-  'computerName': COMPUTER_NAME,
   'line': '-'.repeat(80),
   'logLevel': 'debug',
-  'logPath': `${Process.env.HOME}/.lotho/lotho.log`,
-  'now': () => DateTime.utc(),
+  'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho.log'),
+  'name': {
+    'computer': COMPUTER_NAME,
+    'content': 'current'
+  },
+  'now': () => DateTime.local(),
   'parameter': {
     'rsync': {
       '--archive': true,
@@ -83,10 +93,11 @@ const configurationPrototype = {
     'start': {}
   },
   'path': {
-    'configuration': `${Process.env.HOME}/.lotho/configuration.json`,
-    'home': `${Process.env.HOME}/.lotho`,
+    'configuration': Path.join(Process.env.HOME, '.lotho', 'configuration.json'),
+    'home': Path.join(Process.env.HOME, '.lotho'),
+    'privateKey': Path.join(Process.env.HOME, '.ssh', 'id_rsa'),
     'rsync': '/usr/local/bin/rsync',
-    'start': Path.normalize(`${__dirname}/lotho.js`)
+    'start': Path.normalize(Path.join(__dirname, 'lotho.js'))
   },
   'pattern': {
     'change': /^([<>ch\\.\\*]\S+)\s+(.*)$/,
@@ -94,7 +105,8 @@ const configurationPrototype = {
     'countOfCreated': /number of created files: ([\d,]+)/im,
     'countOfUpdated': /number of regular files transferred: ([\d,]+)/im,
     'countOfDeleted': /number of deleted files: ([\d,]+)/im,
-    'path': /abc/ // buckbeak.local:/Volumes/BUCKBEAK1/Bac
+    'remotePath': /^(.*):(.*)$/, // buckbeak.local:/Volumes/BUCKBEAK1/Backup/PODMORE
+    'stamp': /^(.*) to (.*)$/
   },
   'range': {
     'progressInSeconds':  {
@@ -104,16 +116,16 @@ const configurationPrototype = {
   },
   'task': {
     'logLevel': 'debug',
-    'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-task.log`
+    'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
     'logLevel': 'debug',
-    'logPath': `${Process.env.HOME}/Library/Logs/lotho/lotho-test.log`,
+    'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'parameter': {
       'lotho': {}
     },
     'path': {
-      'lotho': 'distributable/lotho.js'
+      'lotho': Path.join('distributable', 'lotho.js')
     }
   }
 }

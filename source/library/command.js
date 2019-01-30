@@ -1,10 +1,15 @@
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
 import _Command from 'commander'
 
-import Archive from './archive'
 import Configuration from '../configuration'
 import Package from '../../package.json'
 import ProcessManager from './process-manager'
+
+import Archive from './archive'
+import Local from './archive/local'
+import Remote from './archive/remote'
+
+import { CommandInvalidError } from './error/command-error'
 
 const Command = Object.create(_Command)
 
@@ -18,16 +23,14 @@ Command
 Command
   .command('create-configuration')
   .description(`Create a default configuration at the path specified if one doesn't exist, defaults to '${Path.trim(Configuration.path.configuration)}'`)
-  .action(() => {
-    return Command.execute(() => {})
-  })
+  .action(() => Command.execute(() => {}))
 
 Command
-  .command('run-once [name]')
-  .description('Archive the source directories according to the configuration')
+  .command('run-archive [name]')
+  .description('Process the archive(s) according to the configuration')
   .action((name) => {
-    return Command.onArchive(name, (archive) => {
-      return Archive.createArchive(archive.path.source, archive.path.target, archive.path.include, archive.path.exclude).runOnce()
+    return Command.executeArchive(name, (archive) => {
+      return Archive.selectArchive(archive).archive()
     })
   })
 
@@ -35,8 +38,8 @@ Command
   .command('run-schedule <name>')
   .description('Schedule the archive according to the configuration')
   .action((name) => {
-    return Command.onArchive(name, (archive) => {
-      return Archive.createArchive(archive.path.source, archive.path.target, archive.path.include, archive.path.exclude).startSchedule(archive.schedule)
+    return Command.executeArchive(name, (archive) => {
+      return Archive.selectArchive(archive).startSchedule()
     })
   })
 
@@ -44,8 +47,8 @@ Command
   .command('start-archive [name]')
   .description('Start both the process manager and the schedule(s)')
   .action((name) => {
-    return Command.onArchive(name, (archive) => {
-      return ProcessManager.startArchive(archive.name)
+    return Command.executeArchive(name, (archive) => {
+      return ProcessManager.startArchive(archive)
     })
   })
 
@@ -53,15 +56,14 @@ Command
   .command('stop-archive [name]')
   .description('Stop and delete the schedule(s) (the process manager remains running)')
   .action((name) => {
-    return Command.onArchive(name, (archive) => {
-      return ProcessManager.stopArchive(archive.name)
+    return Command.executeArchive(name, (archive) => {
+      return ProcessManager.stopArchive(archive)
     })
   })
 
 Command.on('command:*', () => {
-  return Command.execute(async () => {
-    Log.error({ 'argument': Command.args }, 'Command.on(\'command:*\', () => { ... })')
-    Command.outputHelp((text) => `Invalid command: ${Command.args.join(' ')}\n\n${text}\n`)
+  return Command.execute(() => {
+    throw new CommandInvalidError(Command.args)
   })
 })
 
@@ -139,7 +141,7 @@ Command.execute = async function (fn) {
   
 }
 
-Command.onArchive = function (name, fn) {
+Command.executeArchive = function (name, fn) {
 
   return Command.execute(async () => {
 
@@ -167,5 +169,8 @@ Command.onArchive = function (name, fn) {
   })
 
 }
+
+Local.registerArchiveClass()
+Remote.registerArchiveClass()
   
 export default Command
