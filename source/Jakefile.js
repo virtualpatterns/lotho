@@ -1,1 +1,1 @@
-import './distributable/task/index'
+import './distributable/task/lotho'

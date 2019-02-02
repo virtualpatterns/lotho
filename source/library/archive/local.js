@@ -10,12 +10,10 @@ const archivePrototype = Archive.getArchivePrototype()
 const localPrototype = Object.create(archivePrototype)
 
 localPrototype.getSynchronizeStatistic = function (stdout) {
-  Log.trace('Local.getSynchronizeStatistic(stdout)')
   return Merge(archivePrototype.getSynchronizeStatistic.call(this, stdout), { 'countOfDeleted': Local.getCountOfDeleted(stdout) })
 }
 
 localPrototype.purge = async function (stamp) {
-  Log.trace(`Local.purge('${stamp.toFormat(Configuration.format.stamp)}')`)
 
   let current = stamp
   let previous = null
@@ -47,7 +45,6 @@ localPrototype.purge = async function (stamp) {
 const Local = Object.create(Archive)
 
 Local.createArchive = function (option, prototype = localPrototype) {
-  Log.trace(option, 'Local.createArchive(option, prototype)')
   return Archive.createArchive.call(this, option, prototype)
 }
 

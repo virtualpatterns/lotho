@@ -29,7 +29,7 @@
     "jake": "npm run build-jake && jake",
     "build-all": "npm run build-jake && jake build"
   },
-  "version": "0.0.6",
+  "version": "0.0.7-72",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",
@@ -50,7 +50,6 @@
     "luxon": "^1.4.5",
     "object-path": "^0.11.4",
     "pm2": "^3.2.4",
-    "sanitize-filename": "^1.6.1",
     "source-map-support": "^0.5.9",
     "ssh2-sftp-client": "^2.4.3",
     "uuid": "^3.3.2"

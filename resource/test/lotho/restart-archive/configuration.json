@@ -1,0 +1,44 @@
+{
+  "archive": [
+    {
+      "name": "1",
+      "path": {
+        "source": [ "resource/test/lotho/start-archive/1/source" ],
+        "target": "resource/test/lotho/start-archive/1/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/3 * * * * *"
+    },
+    {
+      "name": "1.5",
+      "path": {
+        "source": [ "resource/test/lotho/start-archive/1.5/source" ],
+        "target": "resource/test/lotho/start-archive/1.5/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/5 * * * * *"
+    },
+    {
+      "name": "2",
+      "path": {
+        "source": [ "resource/test/lotho/start-archive/2/source" ],
+        "target": "resource/test/lotho/start-archive/2/target",
+        "exclude": [],
+        "include": []
+      },
+      "schedule": "*/7 * * * * *"
+    }
+  ],
+  "parameter": {
+    "rsync": {
+      "--relative": false
+    }
+  },
+  "range": {
+    "progressInSeconds":  {
+      "minimum": 0.0
+    }
+  }
+}

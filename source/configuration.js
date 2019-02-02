@@ -39,7 +39,7 @@ const configurationPrototype = {
   'default': {
     'archive': [
       {
-        'name': 'COMPUTER_NAME',
+        'name': COMPUTER_NAME,
         'path': {
           'source': [ 
             Path.join(Process.env.HOME, '.lotho')
@@ -55,8 +55,6 @@ const configurationPrototype = {
         'schedule': '0 0 */1 * * *'
       }
     ],
-    'logLevel': 'debug',
-    'logPath': Path.join(Process.env.HOME, '.lotho', 'lotho.log'),
     'path': {
       'rsync': '/usr/local/bin/rsync',
       'privateKey': Path.join(Process.env.HOME, '.ssh', 'id_rsa')
@@ -66,11 +64,11 @@ const configurationPrototype = {
     'shortDuration': 'hh\'h\' mm\'m\' ss.SSS\'s\'',
     'longDuration': 'yy\'y\' MM\'mo\' dd\'d\' hh\'h\' mm\'m\' ss.SSS\'s\'',
     'schedule': '\'on\' DDDD \'at\' tt',
-    'stamp': 'yyyy.LL.dd HH.mm.ss.SSSZZZ'
+    'stamp': 'yyyy.LL.dd-HH.mm.ss.SSSZZZ'
   },
   'line': '-'.repeat(80),
   'logLevel': 'debug',
-  'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho.log'),
+  'logPath': 'console', // Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho.log'),
   'name': {
     'computer': COMPUTER_NAME,
     'content': 'current'
@@ -119,7 +117,7 @@ const configurationPrototype = {
     'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'debug',
+    'logLevel': 'trace',
     'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'parameter': {
       'lotho': {}

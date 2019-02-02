@@ -3,19 +3,18 @@ import { CronJob as Job } from 'cron'
 import { DateTime, Interval } from 'luxon'
 import EventEmitter from 'events'
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
-import Is from '@pwn/is'
 import Merge from 'deepmerge'
 import Property from 'object-path'
 import UUID from 'uuid/v4'
 
 import Configuration from '../configuration'
+import Is from './is'
 
 import { ArchiveClassNotFoundError, ArchiveLockError, ArchiveSynchronizeError } from './error/archive-error'
 
 const archivePrototype = Object.create(EventEmitter.prototype)
 
 archivePrototype.startSchedule = function () {
-  Log.trace('Archive.startSchedule()')
 
   if (Is.null(this.job)) { 
 
@@ -41,7 +40,6 @@ archivePrototype.startSchedule = function () {
 }
 
 archivePrototype.stopSchedule = function () {
-  Log.trace('Archive.stopSchedule()')
 
   if (Is.not.null(this.job)) { 
 
@@ -66,7 +64,6 @@ archivePrototype.getNextSchedule = function () {
 
 archivePrototype.onScheduled = async function () {
   Log.debug(Configuration.line)
-  Log.trace('Archive.onScheduled()')
   
   try {
 
@@ -103,12 +100,10 @@ archivePrototype.onScheduled = async function () {
 }
 
 archivePrototype.onStopped = function () {
-  Log.trace('Archive.onStopped()')
   this.emit('stopped')
 }
 
 archivePrototype.archive = async function (stamp = Configuration.now()) {
-  Log.trace(`Archive.archive('${stamp.toFormat(Configuration.format.stamp)}')`)
 
   Log.debug(`Archiving '${this.option.name}' ...`)
   let start = Process.hrtime()
@@ -128,7 +123,6 @@ archivePrototype.archive = async function (stamp = Configuration.now()) {
 }
 
 archivePrototype.synchronize = function (stamp) {
-  Log.trace(`Archive.synchronize('${stamp.toFormat(Configuration.format.stamp)}')`)
 
   return new Promise(async (resolve, reject) => {
 
@@ -153,7 +147,7 @@ archivePrototype.synchronize = function (stamp) {
       let stdout = ''
       let stderr = ''
 
-      process.stdout.on('data', (data) => {
+      process.stdout.on('data', this.onSTDOUT = (data) => {
 
         let dataAsString = data.toString()
         dataAsString.split('\n').forEach((line) => {
@@ -213,12 +207,12 @@ archivePrototype.synchronize = function (stamp) {
 
       })
       
-      process.stderr.on('data', (data) => {
+      process.stderr.on('data', this.onSTDERR = (data) => {
         let dataAsString = data.toString()
         stderr += dataAsString.toString()
       })
 
-      process.on('error', (error) => {
+      process.once('error', this.onError = (error) => {
 
         if (!isResolved && !isRejected) {
 
@@ -231,7 +225,7 @@ archivePrototype.synchronize = function (stamp) {
 
       })
       
-      process.on('exit', (code, signal) => {
+      process.once('exit', this.onExit = (code, signal) => {
 
         if (!isResolved && !isRejected) {
 
@@ -239,10 +233,8 @@ archivePrototype.synchronize = function (stamp) {
           if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
 
           if (code == 0) {
-
             isResolved = true
             resolve(this.getSynchronizeStatistic(stdout))
-
           }
           else {
   
@@ -254,6 +246,11 @@ archivePrototype.synchronize = function (stamp) {
           }
           
         }
+
+        process.stdout.off('data', this.onSTDOUT)
+        process.stderr.off('data', this.onSTDERR)
+        process.off('error', this.onError)
+        process.off('exit', this.onExit)
 
       })
 
@@ -274,21 +271,11 @@ archivePrototype.synchronize = function (stamp) {
 }
 
 archivePrototype.getSynchronizeStatistic = function (stdout) {
-  Log.trace('Archive.getSynchronizeStatistic(stdout)')
 
   return {
     'countOfScanned': Archive.getCountOfScanned(stdout),
     'countOfCreated': Archive.getCountOfCreated(stdout),
     'countOfUpdated': Archive.getCountOfUpdated(stdout)
-  }
-
-}
-
-archivePrototype.purge = function (stamp) {
-  Log.trace(`Archive.purge('${stamp.toFormat(Configuration.format.stamp)}')`)
-
-  return {
-    'countOfPurged': 0
   }
 
 }
@@ -413,12 +400,6 @@ Archive.isExpired = function (current, previous, next) {
         break
       default:
         isExpired = false
-    }
-
-    if (isExpired) {
-      Log.debug(`Expiring '${previous.toFormat(Configuration.format.stamp)}' ...`)
-    } else {
-      Log.debug(`Keeping  '${previous.toFormat(Configuration.format.stamp)}' ...`)
     }
 
     return isExpired

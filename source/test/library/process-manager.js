@@ -1,22 +1,26 @@
 import { assert as Assert } from 'chai'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
-import Sanitize from 'sanitize-filename'
 
 import ProcessManager from '../../library/process-manager'
 import Configuration from '../../configuration'
 
 describe('process-manager', function () {
 
-  describe('startArchive(archive)', function () {
+  describe('startArchive()', function () {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive`)
     let configurationPath = `${rootPath}/configuration.json`
 
+    let processManager = null
     let pid = null 
 
     before(async function () {
+
       Configuration.merge(configurationPath)
-      pid = (await ProcessManager.startArchive(Configuration.archive[0])).pid
+
+      processManager = await ProcessManager.openProcessManager(Configuration.archive[0])
+      pid = (await processManager.startArchive()).pid
+      
     })
   
     it('should be a valid pid', function () {
@@ -29,16 +33,10 @@ describe('process-manager', function () {
 
     after(async function () {
 
-      await ProcessManager.stopArchive(Configuration.archive[0])
+      await processManager.stopArchive()
+      await processManager.close()
+
       await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
-
-      let logPath = Configuration.logPath
-
-      let logParentPath = Path.dirname(logPath)
-      let logExtension = Path.extname(logPath)
-      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(Configuration.archive[0].name)}`
-
-      await FileSystem.remove(Path.join(logParentPath, `${logName}${logExtension}`))
 
       Configuration.clear()
       Configuration.merge(Configuration.test)
@@ -47,21 +45,24 @@ describe('process-manager', function () {
 
   })
 
-  describe('stopArchive(archive)', function () {
+  describe('stopArchive()', function () {
 
     let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
     let configurationPath = `${rootPath}/configuration.json`
 
+    let processManager = null
     let pid = null 
 
     before(async function () {
       
       Configuration.merge(configurationPath)
-      pid = (await ProcessManager.startArchive(Configuration.archive[0])).pid
 
+      processManager = await ProcessManager.openProcessManager(Configuration.archive[0])
+      pid = (await processManager.startArchive()).pid
+      
       await FileSystem.whenFileExists(1000, 20000, `${Configuration.archive[0].path.target}/${Configuration.name.content}`)
 
-      await ProcessManager.stopArchive(Configuration.archive[0])
+      await processManager.stopArchive()
 
     })
   
@@ -71,15 +72,9 @@ describe('process-manager', function () {
 
     after(async function () {
 
+      await processManager.close()
+
       await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
-
-      let logPath = Configuration.logPath
-
-      let logParentPath = Path.dirname(logPath)
-      let logExtension = Path.extname(logPath)
-      let logName = `${Path.basename(logPath, logExtension)}-${Sanitize(Configuration.archive[0].name)}`
-
-      await FileSystem.remove(Path.join(logParentPath, `${logName}${logExtension}`))
 
       Configuration.clear()
       Configuration.merge(Configuration.test)

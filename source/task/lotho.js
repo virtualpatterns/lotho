@@ -51,7 +51,7 @@ task('build', [ 'clean', 'count', 'lint' ], { 'async': true }, () => {
 
 desc('Run tests')
 task('test', [ 'build' ], { 'async': true }, () => {
-  Jake.exec([ 'mocha --bail --timeout 0 distributable/test/index.js' ], { 'printStderr': true, 'printStdout': true }, () => complete())
+  Jake.exec([ 'mocha --bail --timeout 0 distributable/test/lotho.js' ], { 'printStderr': true, 'printStdout': true }, () => complete())
 })
 
 desc('Publish package')

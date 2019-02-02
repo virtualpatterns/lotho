@@ -1,17 +1,15 @@
 import { DateTime } from 'luxon'
-import Is from '@pwn/is'
 import { Log, FileSystem, Path, Process } from '@virtualpatterns/mablung'
 import Connection from 'ssh2-sftp-client'
 
-import Configuration from '../../configuration'
-
 import Archive from '../archive'
+import Configuration from '../../configuration'
+import Is from '../is'
 
 const archivePrototype = Archive.getArchivePrototype()
 const remotePrototype = Object.create(archivePrototype)
 
 remotePrototype.connect = async function () {
-  Log.trace('Remote.connect()')
 
   if (Is.null(this.connection)) {
 
@@ -30,7 +28,6 @@ remotePrototype.connect = async function () {
 }
 
 remotePrototype.disconnect = async function () {
-  Log.trace('Remote.disconnect()')
 
   if (Is.not.null(this.connection)) {
 
@@ -42,7 +39,6 @@ remotePrototype.disconnect = async function () {
 }
 
 remotePrototype.purge = async function (stamp) {
-  Log.trace(`Remote.purge('${stamp.toFormat(Configuration.format.stamp)}')`)
 
   await this.connect()
 
@@ -93,7 +89,6 @@ remotePrototype.purge = async function (stamp) {
 const Remote = Object.create(Archive)
 
 Remote.createArchive = function (option, prototype = remotePrototype) {
-  Log.trace(option, 'Remote.createArchive(option, prototype)')
 
   let archive = Archive.createArchive.call(this, option, prototype)
 

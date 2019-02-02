@@ -1,7 +1,8 @@
+import '@babel/polyfill'
 import { assert as Assert } from 'chai'
 import ChildProcess from 'child_process'
-import { FileSystem, Path, Process, Log } from '@virtualpatterns/mablung'
-import Sanitize from 'sanitize-filename'
+import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
+import Source from 'source-map-support'
 
 import Configuration from '../configuration'
 import Package from '../../package.json'
@@ -9,38 +10,92 @@ import ProcessManager from '../library/process-manager'
 
 import { FileExistsError } from './error/test-error'
 
+Source.install({ 'handleUncaughtExceptions': false })
+
+before(async function () {
+
+  Configuration.merge(Configuration.test)
+
+  if (Configuration.logPath == 'console') {
+    Log.createFormattedLog({ 'level': Configuration.logLevel })
+  }
+  else {
+    await FileSystem.mkdir(Path.dirname(Configuration.logPath), { 'recursive': true })
+    await FileSystem.remove(Configuration.logPath)
+    Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
+  }
+
+})
+
 describe('lotho', function () {
+  
+  const lothoPrototype = Object.create({})
 
-  let run = function (parameter) {
+  lothoPrototype.stop = function () {
+  
     return new Promise((resolve) => {
-      ChildProcess
-        .fork(Configuration.test.path.lotho, [ ...Configuration.conversion.toParameter(Configuration.test.parameter.lotho), ...parameter ], { 'silent': true })
-        .on('exit', (code) => {
-          resolve(code)
-        })
-    })
-  }
-
-  let start = function (parameter) {
-    return ChildProcess
-      .fork(Configuration.test.path.lotho, [ ...Configuration.conversion.toParameter(Configuration.test.parameter.lotho), ...parameter ], { 'silent': true })
-  }
-
-  let stop = function (process) {
-    return new Promise((resolve) => {
-      process.on('exit', (code) => {
+  
+      this.process.once('exit', (code) => {
         resolve(code)
       })
-      process.kill()
+      this.process.kill()
+  
     })
+  
   }
+  
+  const Lotho = Object.create({})
+  
+  Lotho.startLotho = function (parameter, prototype = lothoPrototype) {
+    Log.trace({ parameter }, 'Lotho.startLotho(parameter, prototype)')
+  
+    let lotho = Object.create(prototype)
+  
+    lotho.process = ChildProcess.fork(Configuration.test.path.lotho, [ ...Configuration.conversion.toParameter(Configuration.test.parameter.lotho), ...parameter ], { 'silent': true })
+    
+    return lotho
+  
+  }
+  
+  Lotho.getLothoPrototype = function () {
+    return lothoPrototype
+  }
+  
+  Lotho.isLotho = function (lotho) {
+    return lothoPrototype.isPrototypeOf(lotho)
+  }
+  
+  Lotho.run = function (parameter) {
+    Log.trace({ parameter }, 'Lotho.startLotho(parameter, prototype)')
+
+    return new Promise((resolve) => {
+  
+      ChildProcess
+        .fork(Configuration.test.path.lotho, [ 
+          ...Configuration.conversion.toParameter(Configuration.test.parameter.lotho), 
+          ...parameter 
+        ], 
+        { 'silent': true })
+        .once('exit', (code) => {
+          resolve(code)
+        })
+  
+    })
+  
+  }
+  
+  let processManager = null
+
+  before(async function () {
+    processManager = await ProcessManager.openProcessManager({})
+  })
 
   describe('--help', function () {
 
     let code = null
 
     before(async function () {
-      code = await run([ '--help' ])
+      code = await Lotho.run([ '--help' ])
     })
 
     it('should exit with 0', function () {
@@ -57,7 +112,7 @@ describe('lotho', function () {
     let code = null
 
     before(async function () {
-      code = await run([
+      code = await Lotho.run([
         '--configurationPath', configurationPath,
         '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
         'create-configuration'
@@ -91,7 +146,7 @@ describe('lotho', function () {
       let code = null
 
       before(async function () {
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'run-archive'
@@ -124,7 +179,7 @@ describe('lotho', function () {
       let code = null
 
       before(async function () {
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'run-archive', '1.5'
@@ -150,7 +205,7 @@ describe('lotho', function () {
       let code = null
 
       before(async function () {
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'run-archive', '2'
@@ -183,10 +238,10 @@ describe('lotho', function () {
     let configurationPath = `${rootPath}/configuration.json`
     let targetPath = `${rootPath}/target`
 
-    let process = null
+    let lotho = null
 
-    before(function () {
-      process = start([
+    before(async function () {
+      lotho = Lotho.startLotho([
         '--configurationPath', configurationPath,
         '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
         'run-schedule', Package.name
@@ -198,7 +253,7 @@ describe('lotho', function () {
     })
     
     after(async function () {
-      await stop(process)
+      await lotho.stop(process)
       await FileSystem.remove(`${targetPath}/${Configuration.name.content}`)
     })
 
@@ -220,14 +275,14 @@ describe('lotho', function () {
 
       before(async function () {
         
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'start-archive'
         ])
 
-        pid1 = await ProcessManager.getPID('1')
-        pid2 = await ProcessManager.getPID('2')
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
 
       })
   
@@ -236,7 +291,6 @@ describe('lotho', function () {
       })
   
       it('should be a valid pid', function () {
-        Log.debug(pid1)
         Process.kill(pid1, 0)
       })
 
@@ -254,20 +308,11 @@ describe('lotho', function () {
       
       after(async function () {
 
-        await run([
+        await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive'
         ])
-
-        let logPath = Configuration.logPath
-
-        let logParentPath = Path.dirname(logPath)
-        let logExtension = Path.extname(logPath)
-
-        for (let name of ['1', '1.5', '2']) {
-          await FileSystem.remove(Path.join(logParentPath, `${Path.basename(logPath, logExtension)}-${Sanitize(name)}${logExtension}`))
-        }
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
@@ -286,14 +331,14 @@ describe('lotho', function () {
 
       before(async function () {
 
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'start-archive', '2'
         ])
 
-        pid1 = await ProcessManager.getPID('1')
-        pid2 = await ProcessManager.getPID('2')
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
 
       })
   
@@ -321,20 +366,11 @@ describe('lotho', function () {
       
       after(async function () {
 
-        await run([
+        await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive', '2'
         ])
-
-        let logPath = Configuration.logPath
-
-        let logParentPath = Path.dirname(logPath)
-        let logExtension = Path.extname(logPath)
-
-        for (let name of ['2']) {
-          await FileSystem.remove(Path.join(logParentPath, `${Path.basename(logPath, logExtension)}-${Sanitize(name)}${logExtension}`))
-        }
 
         await FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
 
@@ -343,7 +379,7 @@ describe('lotho', function () {
     })
 
   })
-   
+
   describe('stop-archive [name]', function () {
 
     let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/stop-archive`)
@@ -360,7 +396,7 @@ describe('lotho', function () {
 
       before(async function () {
   
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'start-archive'
@@ -371,10 +407,10 @@ describe('lotho', function () {
           FileSystem.whenFileExists(1000, 20000, `${targetPath2}/${Configuration.name.content}`)
         ])
 
-        pid1 = await ProcessManager.getPID('1')
-        pid2 = await ProcessManager.getPID('2')
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
 
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive'
@@ -394,22 +430,11 @@ describe('lotho', function () {
         Assert.throws(() => Process.kill(pid2, 0))
       })
 
-      after(async function () {
-
-        let logPath = Configuration.logPath
-
-        let logParentPath = Path.dirname(logPath)
-        let logExtension = Path.extname(logPath)
-
-        for (let name of ['1', '2']) {
-          await FileSystem.remove(Path.join(logParentPath, `${Path.basename(logPath, logExtension)}-${Sanitize(name)}${logExtension}`))
-        }
-
-        await Promise.all([
+      after(function () {
+        return Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
         ])
-
       })
   
     })
@@ -422,22 +447,22 @@ describe('lotho', function () {
 
       before(async function () {
   
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'start-archive', '2'
         ])
-
+        
         await FileSystem.whenFileExists(1000, 20000, `${targetPath2}/${Configuration.name.content}`)
-
-        pid2 = await ProcessManager.getPID('2')
-
-        code = await run([
+        
+        pid2 = await processManager.getArchivePID('2')
+        
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive'
         ])
-  
+
       })
   
       it('should exit with 0', function () {
@@ -452,17 +477,7 @@ describe('lotho', function () {
         Assert.throws(() => Process.kill(pid2, 0))
       })
 
-      after(async function () {
-
-        let logPath = Configuration.logPath
-
-        let logParentPath = Path.dirname(logPath)
-        let logExtension = Path.extname(logPath)
-
-        for (let name of ['2']) {
-          await FileSystem.remove(Path.join(logParentPath, `${Path.basename(logPath, logExtension)}-${Sanitize(name)}${logExtension}`))
-        }
-
+      after(function () {
         return FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
       })
   
@@ -476,7 +491,7 @@ describe('lotho', function () {
 
       before(async function () {
   
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'start-archive'
@@ -487,10 +502,10 @@ describe('lotho', function () {
           FileSystem.whenFileExists(1000, 20000, `${targetPath2}/${Configuration.name.content}`)
         ])
 
-        pid1 = await ProcessManager.getPID('1')
-        pid2 = await ProcessManager.getPID('2')
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
 
-        code = await run([
+        code = await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive', '2'
@@ -512,20 +527,171 @@ describe('lotho', function () {
 
       after(async function () {
 
-        await run([
+        await Lotho.run([
           '--configurationPath', configurationPath,
           '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
           'stop-archive', '1'
         ])
 
-        let logPath = Configuration.logPath
+        await Promise.all([
+          FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+        ])
 
-        let logParentPath = Path.dirname(logPath)
-        let logExtension = Path.extname(logPath)
+      })
+  
+    })
 
-        for (let name of ['1', '2']) {
-          await FileSystem.remove(Path.join(logParentPath, `${Path.basename(logPath, logExtension)}-${Sanitize(name)}${logExtension}`))
-        }
+  })
+   
+  describe('restart-archive [name]', function () {
+
+    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/restart-archive`)
+    let configurationPath = `${rootPath}/configuration.json`
+
+    let targetPath1 = `${rootPath}/1/target`
+    let targetPath2 = `${rootPath}/2/target`
+
+    describe('(when called without a name)', function () {
+
+      let code = null
+      let pid1 = null
+      let pid2 = null
+      let pid3 = null
+      let pid4 = null
+
+      before(async function () {
+        
+        code = await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'start-archive'
+        ])
+
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
+        
+        code = await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'restart-archive'
+        ])
+
+        pid3 = await processManager.getArchivePID('1')
+        pid4 = await processManager.getArchivePID('2')
+
+      })
+  
+      it('should exit with 0', function () {
+        Assert.equal(code, 0)
+      })
+  
+      it('should not be a valid pid', function () {
+        Assert.throws(() => Process.kill(pid1, 0))
+      })
+
+      it('should not be a valid pid', function () {
+        Assert.throws(() => Process.kill(pid2, 0))
+      })
+
+      it('should be a valid pid', function () {
+        Process.kill(pid3, 0)
+      })
+
+      it('should be a valid pid', function () {
+        Process.kill(pid4, 0)
+      })
+      
+      it('should not be the same pid', function () {
+        Assert.notEqual(pid3, pid1)
+      })
+
+      it('should not be the same pid', function () {
+        Assert.notEqual(pid4, pid2)
+      })
+
+      after(async function () {
+
+        await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'stop-archive'
+        ])
+
+        await Promise.all([
+          FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+        ])
+
+      })
+  
+    })
+
+    describe('(when called with a name)', function () {
+
+      let pid1 = null
+      let pid2 = null
+      let pid3 = null
+      let pid4 = null
+      let code = null
+
+      before(async function () {
+
+        code = await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'start-archive'
+        ])
+
+        pid1 = await processManager.getArchivePID('1')
+        pid2 = await processManager.getArchivePID('2')
+        
+        code = await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'restart-archive', '2'
+        ])
+
+        pid3 = await processManager.getArchivePID('1')
+        pid4 = await processManager.getArchivePID('2')
+
+      })
+  
+      it('should exit with 0', function () {
+        Assert.equal(code, 0)
+      })
+  
+      it('should be a valid pid', function () {
+        Process.kill(pid1, 0)
+      })
+
+      it('should not be a valid pid', function () {
+        Assert.throws(() => Process.kill(pid2, 0))
+      })
+
+      it('should be a valid pid', function () {
+        Process.kill(pid3, 0)
+      })
+
+      it('should be a valid pid', function () {
+        Process.kill(pid4, 0)
+      })
+      
+      it('should be the same pid', function () {
+        Assert.equal(pid3, pid1)
+      })
+
+      it('should not be the same pid', function () {
+        Assert.notEqual(pid4, pid2)
+      })
+
+      after(async function () {
+
+        await Lotho.run([
+          '--configurationPath', configurationPath,
+          '--logLevel', Configuration.logLevel, '--logPath', Configuration.logPath,
+          'stop-archive'
+        ])
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
@@ -538,4 +704,15 @@ describe('lotho', function () {
 
   })
 
+  after(function () {
+    return processManager.close()
+  })
+
 })
+
+require('./library/archive/local')
+require('./library/archive/remote')
+require('./library/archive')
+require('./library/is')
+require('./library/process-manager')
+require('./configuration')

@@ -23,6 +23,118 @@ describe('remote', function () {
     })
   })
 
+  describe('synchronize(stamp)', function () {
+
+    let wait = function(milliseconds) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, milliseconds)
+      })
+    }      
+
+    let stamp = null
+
+    before(function () {
+      stamp = Configuration.now()  
+    })
+  
+    describe('(with an empty source)', function () {
+
+      let rootPath = null
+      let targetPath = null
+      let option = null
+
+      let result = null
+
+      before(async function () {
+
+        rootPath = 'resource/test/library/archive/empty'
+        targetPath = `${rootPath}/target`
+        option = {
+          'name': this.test.parent.title,
+          'path': {
+            'source': `${rootPath}/source`,
+            'target': `${Configuration.name.computer}.local:"${__dirname}/../../../../${rootPath}/target"`
+          }
+        }
+
+        result = await Remote.createArchive(option).synchronize(stamp)
+
+      })
+
+      it('should create the content directory', async function () {
+        Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${Configuration.name.content}`))
+      })
+
+      it('should have created 1 path', function () {
+        Assert.equal(result.countOfCreated, 1)
+      })
+
+      it('should have updated 0 paths', function () {
+        Assert.equal(result.countOfUpdated, 0)
+      })
+
+      after(function () {
+        return FileSystem.remove(`${targetPath}/${Configuration.name.content}`)
+      })
+
+    })
+
+    describe('(with an updated file in source)', function () {
+
+      let rootPath = null
+      let targetPath = null
+      let option = null
+
+      let result = null
+
+      before(async function () {
+
+        rootPath = 'resource/test/library/archive/updated'
+        targetPath = `${rootPath}/target`
+        option = {
+          'name': this.test.parent.title,
+          'path': {
+            'source': `${rootPath}/source`,
+            'target': `${Configuration.name.computer}.local:"${__dirname}/../../../../${rootPath}/target"`
+          }
+        }
+  
+        let _archive = Remote.createArchive(option)
+
+        await FileSystem.writeJson(`${option.path.source}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+        result = await _archive.synchronize(stamp)
+
+        await wait(1000)
+
+        await FileSystem.writeJson(`${option.path.source}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+        result = await _archive.synchronize(stamp)
+
+      })
+
+      it('should create a record of the original file', async function () {
+        Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}/a.json`))
+      })
+
+      it('should have created 0 paths', function () {
+        Assert.equal(result.countOfCreated, 0)
+      })
+
+      it('should have updated 1 path', function () {
+        Assert.equal(result.countOfUpdated, 1)
+      })
+
+      after(function () {
+        return Promise.all([
+          FileSystem.remove(`${option.path.source}/a.json`),
+          FileSystem.remove(`${targetPath}/${Configuration.name.content}`),
+          FileSystem.remove(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}`)
+        ])
+      })
+
+    })
+
+  })
+
   describe('purge(stamp)', function () {
 
     let stamp = null

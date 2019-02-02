@@ -220,7 +220,6 @@ describe('local', function () {
 
       after(function () {
         return Promise.all([
-          FileSystem.remove(`${option.path.source}/def`),
           FileSystem.remove(`${option.path.source}/a.json`),
           FileSystem.remove(`${option.path.target}/${Configuration.name.content}`),
           FileSystem.remove(`${option.path.target}/${stamp.toFormat(Configuration.format.stamp)}`)

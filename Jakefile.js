@@ -1,5 +1,5 @@
 "use strict";
 
-require("./distributable/task/index");
+require("./distributable/task/lotho");
 
 //# sourceMappingURL=Jakefile.js.map
