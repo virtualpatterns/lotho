@@ -126,8 +126,8 @@ archivePrototype.synchronize = function (stamp) {
 
   return new Promise(async (resolve, reject) => {
 
-    let isRejected = false
-    let isResolved = false
+    // let isRejected = false
+    // let isResolved = false
 
     try {
 
@@ -214,55 +214,60 @@ archivePrototype.synchronize = function (stamp) {
 
       process.once('error', this.onError = (error) => {
 
-        if (!isResolved && !isRejected) {
+        process.off('exit', this.onExit)
+        process.off('error', this.onError)
+        process.stderr.off('data', this.onSTDERR)
+        process.stdout.off('data', this.onSTDOUT)
 
-          Log.error(error, 'ChildProcess.on(\'error\'), (error) => { ... })')
+        // if (!isResolved && !isRejected) {
 
-          isRejected = true
-          reject(new ArchiveSynchronizeError(this.option))
+        Log.error(error, 'ChildProcess.on(\'error\'), (error) => { ... })')
 
-        }
+        // isRejected = true
+        reject(new ArchiveSynchronizeError(this.option))
+
+        // }
 
       })
       
       process.once('exit', this.onExit = (code, signal) => {
 
-        if (!isResolved && !isRejected) {
-
-          Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? `'${signal}'` : signal}) => { ... })`)
-          if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
-
-          if (code == 0) {
-            isResolved = true
-            resolve(this.getSynchronizeStatistic(stdout))
-          }
-          else {
-  
-            if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
-  
-            isRejected = true
-            reject(new ArchiveSynchronizeError())
-    
-          }
-          
-        }
-
-        process.stdout.off('data', this.onSTDOUT)
-        process.stderr.off('data', this.onSTDERR)
-        process.off('error', this.onError)
         process.off('exit', this.onExit)
+        process.off('error', this.onError)
+        process.stderr.off('data', this.onSTDERR)
+        process.stdout.off('data', this.onSTDOUT)
+
+        // if (!isResolved && !isRejected) {
+
+        Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? `'${signal}'` : signal}) => { ... })`)
+        if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
+
+        if (code == 0) {
+          // isResolved = true
+          resolve(this.getSynchronizeStatistic(stdout))
+        }
+        else {
+
+          if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
+
+          // isRejected = true
+          reject(new ArchiveSynchronizeError())
+  
+        }
+          
+        // }
 
       })
 
     }
     catch (error) {
 
-      if (!isResolved && !isRejected) {
+      // if (!isResolved && !isRejected) {
 
-        isRejected = true
-        reject(error)
+      // isRejected = true
+      reject(error)
 
-      }
+      // }
 
     }
 
@@ -280,12 +285,25 @@ archivePrototype.getSynchronizeStatistic = function (stdout) {
 
 }
 
+archivePrototype.purge = async function (stamp) {
+
+  let current = stamp
+  let expired = await this.getExpired(current)
+
+  for (let _expired of expired) {
+    await this.copyExpired(_expired.previous, _expired.next)
+    await this.deleteExpired(_expired.previous)
+  }
+
+  return { 'countOfPurged': expired.length }
+
+}
+
 const Archive = Object.create({})
 
 Archive.archiveClass = []
 
 Archive.createArchive = function (option, prototype = archivePrototype) {
-  Log.trace(option, 'Archive.createArchive(option, prototype)')
 
   option.path.source = Is.array(option.path.source) ? option.path.source : [ option.path.source ]
   option.path.include = Is.array(option.path.include = Property.get(option.path, 'include', []) ) ? option.path.include : [ option.path.include ]

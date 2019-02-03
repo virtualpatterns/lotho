@@ -499,7 +499,7 @@ describe('local', function () {
 
   })
 
-  describe.only('purge(stamp)', function () {
+  describe('purge(stamp)', function () {
 
     let stamp = null
 

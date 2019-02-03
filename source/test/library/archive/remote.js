@@ -187,12 +187,13 @@ describe('remote', function () {
     
           })
 
-          describe(`(when the next date is the same ${smallUnit})`, function () {
+          describe(`(when the next date is the same ${smallUnit} and the file does not exist)`, function () {
 
             let next = null
             let nextAsString = null
       
             let result = null
+            let value = null
       
             before(async function () {
 
@@ -200,13 +201,12 @@ describe('remote', function () {
               next = previous.plus(toEndOfSmallUnit[0].toDuration())
               nextAsString = next.toFormat(Configuration.format.stamp)
         
-              await Promise.all([
-                FileSystem.mkdir(`${targetPath}/${previousAsString}`, { 'recursive': true }),
-                FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
-              ])
+              await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+              await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
 
               result = await Remote.createArchive(option).purge(stamp)
-      
+              value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+     
             })
 
             it('should purge the previous directory', async function () {
@@ -215,6 +215,50 @@ describe('remote', function () {
 
             it('should have purged 1 paths', function () {
               Assert.equal(result.countOfPurged, 1)
+            })
+
+            it('should have the value \'abc\'', function () {
+              Assert.equal(value, 'abc')
+            })
+
+            after(function () {
+              return FileSystem.remove(`${targetPath}/${nextAsString}`)
+            })
+      
+          })
+
+          describe(`(when the next date is the same ${smallUnit} and the file exists)`, function () {
+
+            let next = null
+            let nextAsString = null
+      
+            let result = null
+            let value = null
+      
+            before(async function () {
+
+              let toEndOfSmallUnit = Interval.fromDateTimes(previous, previous.endOf(smallUnit)).divideEqually(2)
+              next = previous.plus(toEndOfSmallUnit[0].toDuration())
+              nextAsString = next.toFormat(Configuration.format.stamp)
+        
+              await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+              await FileSystem.outputJson(`${targetPath}/${nextAsString}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+
+              result = await Remote.createArchive(option).purge(stamp)
+              value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+     
+            })
+
+            it('should purge the previous directory', async function () {
+              Assert.isFalse(await FileSystem.pathExists(`${targetPath}/${previousAsString}`))
+            })
+
+            it('should have purged 1 paths', function () {
+              Assert.equal(result.countOfPurged, 1)
+            })
+
+            it('should have the value \'def\'', function () {
+              Assert.equal(value, 'def')
             })
 
             after(function () {
@@ -294,12 +338,13 @@ describe('remote', function () {
 
       })
 
-      describe('(when the next date is the same year)', function () {
+      describe('(when the next date is the same year and the file does not exist)', function () {
 
         let next = null
         let nextAsString = null
   
         let result = null
+        let value = null
   
         before(async function () {
 
@@ -307,12 +352,11 @@ describe('remote', function () {
           next = previous.plus(toEndOfYear[0].toDuration())
           nextAsString = next.toFormat(Configuration.format.stamp)
         
-          await Promise.all([
-            FileSystem.mkdir(`${targetPath}/${previousAsString}`, { 'recursive': true }),
-            FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
-          ])
+          await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+          await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
 
           result = await Remote.createArchive(option).purge(stamp)
+          value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
   
         })
 
@@ -322,6 +366,50 @@ describe('remote', function () {
 
         it('should have purged 1 paths', function () {
           Assert.equal(result.countOfPurged, 1)
+        })
+
+        it('should have the value \'abc\'', function () {
+          Assert.equal(value, 'abc')
+        })
+
+        after(function () {
+          return FileSystem.remove(`${targetPath}/${nextAsString}`)
+        })
+  
+      })
+
+      describe('(when the next date is the same year and the file exists)', function () {
+
+        let next = null
+        let nextAsString = null
+  
+        let result = null
+        let value = null
+  
+        before(async function () {
+
+          let toEndOfYear = Interval.fromDateTimes(previous, previous.endOf('year')).divideEqually(2)
+          next = previous.plus(toEndOfYear[0].toDuration())
+          nextAsString = next.toFormat(Configuration.format.stamp)
+        
+          await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+          await FileSystem.outputJson(`${targetPath}/${nextAsString}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+
+          result = await Remote.createArchive(option).purge(stamp)
+          value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+  
+        })
+
+        it('should purge the previous directory', async function () {
+          Assert.isFalse(await FileSystem.pathExists(`${targetPath}/${previousAsString}`))
+        })
+
+        it('should have purged 1 paths', function () {
+          Assert.equal(result.countOfPurged, 1)
+        })
+
+        it('should have the value \'def\'', function () {
+          Assert.equal(value, 'def')
         })
 
         after(function () {

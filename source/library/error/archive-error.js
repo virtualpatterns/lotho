@@ -52,4 +52,17 @@ ArchiveSynchronizeError.prototype = Object.create(ArchiveError.prototype)
 ArchiveSynchronizeError.prototype.constructor = ArchiveSynchronizeError
 ArchiveSynchronizeError.prototype.name = ArchiveSynchronizeError.name
 
-export { ArchiveError, ArchiveClassNotFoundError, ArchiveSynchronizeError }
+function ArchivePurgeError() {
+
+  Error.call(this)
+  Error.captureStackTrace(this, ArchivePurgeError)
+
+  this.message = 'Unable to purge one or more expired paths'
+
+}
+
+ArchivePurgeError.prototype = Object.create(ArchiveError.prototype)
+ArchivePurgeError.prototype.constructor = ArchivePurgeError
+ArchivePurgeError.prototype.name = ArchivePurgeError.name
+
+export { ArchiveError, ArchiveClassNotFoundError, ArchiveSynchronizeError, ArchivePurgeError }
