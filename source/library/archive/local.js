@@ -30,13 +30,25 @@ localPrototype.purge = async function (stamp) {
     .map((dateTime, index, previous) => ({ 'previous': dateTime, 'next': previous[index + 1] }))
     .filter(({ next }) => next)
     .filter(({ previous, next }) => Local.isExpired(current, previous, next))
-    .map(({ previous }) => previous)
+    // .map(({ previous }) => previous)
 
-  await Promise.all(expired
-    .map((previous) => {
-      Log.debug(`Deleting '${previous.toFormat(Configuration.format.stamp)}' ...`)
-      return FileSystem.remove(Path.join(this.option.path.target, previous.toFormat(Configuration.format.stamp)))
-    }))
+  // await Promise.all(expired
+  //   .map((previous) => {
+  //     Log.debug(`Deleting '${previous.toFormat(Configuration.format.stamp)}' ...`)
+  //     return FileSystem.remove(Path.join(this.option.path.target, previous.toFormat(Configuration.format.stamp)))
+  //   }))
+
+  for (let _expired of expired) {
+
+    let previousPath = Path.join(this.option.path.target, _expired.previous.toFormat(Configuration.format.stamp))
+    let nextPath = Path.join(this.option.path.target, _expired.next.toFormat(Configuration.format.stamp))
+
+    Log.debug(`Deleting '${Path.basename(previousPath)}' ...`)
+
+    await FileSystem.copy(previousPath, nextPath, { 'overwrite': false })
+    await FileSystem.remove(previousPath)
+
+  }
 
   return { 'countOfPurged': expired.length }
 
