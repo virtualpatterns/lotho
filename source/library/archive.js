@@ -136,6 +136,9 @@ archivePrototype.synchronize = function (stamp) {
 
     try {
 
+      let sourceSeparator = null
+      let targetSeparator = null
+
       let parameter = [
         ...Configuration.conversion.toParameter(Configuration.parameter.rsync),
         `--backup-dir=..${Path.sep}${stamp.toFormat(Configuration.format.stamp)}`,
@@ -390,44 +393,50 @@ Archive.isExpired = function (current, previous, next) {
 
   if (previous < next && next < current) {
 
-    Log.debug(`'${current.toFormat(Configuration.format.stamp)}'`)
+    Log.debug(` current '${current.toFormat(Configuration.format.stamp)}'`)
 
     let age = Interval.fromDateTimes(previous, current).toDuration()
     let isExpired = false
 
     switch (true) {
       case age.as('seconds') < 1.0:
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1s old, not expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1s old, not expired`)
         isExpired = false
         break
       case age.as('minutes') < 1.0:
         // true for all but last of second
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1m old, ${previous.second} ${previous.second == next.second ? '=' : 'not ='} ${next.second} ${previous.second == next.second ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1m old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.second} ${previous.second == next.second ? '=' : 'not ='} ${next.second} ${previous.second == next.second ? 'expired' : ''}`)
         isExpired = previous.second == next.second
         break
       case age.as('hours') < 1.0:
         // true for all but last of minute
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1h old, ${previous.minute} ${previous.minute == next.minute ? '=' : 'not ='} ${next.minute} ${previous.minute == next.minute ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1h old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.minute} ${previous.minute == next.minute ? '=' : 'not ='} ${next.minute} ${previous.minute == next.minute ? 'expired' : ''}`)
         isExpired = previous.minute == next.minute
         break
       case age.as('days') < 1.0:
         // true for all but last of hour
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1d old, ${previous.hour} ${previous.hour == next.hour ? '=' : 'not ='} ${next.hour} ${previous.hour == next.hour ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1d old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.hour} ${previous.hour == next.hour ? '=' : 'not ='} ${next.hour} ${previous.hour == next.hour ? 'expired' : ''}`)
         isExpired = previous.hour == next.hour
         break
       case age.as('months') < 1.0:
         // true for all but last of day
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1mo old, ${previous.day} ${previous.day == next.day ? '=' : 'not ='} ${next.day} ${previous.day == next.day ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1mo old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.day} ${previous.day == next.day ? '=' : 'not ='} ${next.day} ${previous.day == next.day ? 'expired' : ''}`)
         isExpired = previous.day == next.day
         break
       case age.as('years') < 1.0:
         // true for all but last of month
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1y old, ${previous.month} ${previous.month == next.month ? '=' : 'not ='} ${next.month} ${previous.month == next.month ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1y old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.month} ${previous.month == next.month ? '=' : 'not ='} ${next.month} ${previous.month == next.month ? 'expired' : ''}`)
         isExpired = previous.month == next.month
         break
       case age.as('years') >= 1.0:
         // true for all but last of year
-        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is >= 1y old, ${previous.year} ${previous.year == next.year ? '=' : 'not ='} ${next.year} ${previous.year == next.year ? '' : 'not '}expired`)
+        Log.debug(`previous '${previous.toFormat(Configuration.format.stamp)}' >= 1y old`)
+        Log.debug(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.year} ${previous.year == next.year ? '=' : 'not ='} ${next.year} ${previous.year == next.year ? 'expired' : ''}`)
         isExpired = previous.year == next.year
         break
       default:
