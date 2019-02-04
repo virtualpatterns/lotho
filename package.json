@@ -29,7 +29,7 @@
     "jake": "npm run build-jake && jake",
     "build-all": "npm run build-jake && jake build"
   },
-  "version": "0.0.11",
+  "version": "0.0.12-13",
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",

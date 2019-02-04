@@ -99,6 +99,8 @@ const configurationPrototype = {
     'start': Path.normalize(Path.join(__dirname, 'lotho.js'))
   },
   'pattern': {
+    'backwardSlash': /\\/g,
+    'forwardSlash': /\//g,
     'change': /^([<>ch\\.\\*]\S+)\s+(.*)$/,
     'countOfScanned': /number of files: ([\d,]+)/im,
     'countOfCreated': /number of created files: ([\d,]+)/im,
