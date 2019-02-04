@@ -118,7 +118,7 @@ const configurationPrototype = {
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'trace',
+    'logLevel': 'debug',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'parameter': {
       'lotho': {}

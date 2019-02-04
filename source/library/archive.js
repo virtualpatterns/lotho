@@ -80,10 +80,15 @@ archivePrototype.onScheduled = async function () {
 
     try {
 
-      let result = await this.archive()
-      result.nextSchedule = this.getNextSchedule()
+      let result = null
 
-      Log.debug(`Next scheduled for '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+      try {
+        result = await this.archive()
+        result.nextSchedule = this.getNextSchedule()
+      }
+      finally {
+        Log.debug(`Next scheduled for '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+      }
 
       this.emit('completed', result)
 
@@ -385,35 +390,44 @@ Archive.isExpired = function (current, previous, next) {
 
   if (previous < next && next < current) {
 
+    Log.debug(`'${current.toFormat(Configuration.format.stamp)}'`)
+
     let age = Interval.fromDateTimes(previous, current).toDuration()
     let isExpired = false
 
     switch (true) {
       case age.as('seconds') < 1.0:
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1s old, not expired`)
         isExpired = false
         break
       case age.as('minutes') < 1.0:
         // true for all but last of second
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1m old, ${previous.second} ${previous.second == next.second ? '=' : 'not ='} ${next.second} ${previous.second == next.second ? '' : 'not '}expired`)
         isExpired = previous.second == next.second
         break
       case age.as('hours') < 1.0:
         // true for all but last of minute
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1h old, ${previous.minute} ${previous.minute == next.minute ? '=' : 'not ='} ${next.minute} ${previous.minute == next.minute ? '' : 'not '}expired`)
         isExpired = previous.minute == next.minute
         break
       case age.as('days') < 1.0:
         // true for all but last of hour
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1d old, ${previous.hour} ${previous.hour == next.hour ? '=' : 'not ='} ${next.hour} ${previous.hour == next.hour ? '' : 'not '}expired`)
         isExpired = previous.hour == next.hour
         break
       case age.as('months') < 1.0:
         // true for all but last of day
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1mo old, ${previous.day} ${previous.day == next.day ? '=' : 'not ='} ${next.day} ${previous.day == next.day ? '' : 'not '}expired`)
         isExpired = previous.day == next.day
         break
       case age.as('years') < 1.0:
         // true for all but last of month
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is < 1y old, ${previous.month} ${previous.month == next.month ? '=' : 'not ='} ${next.month} ${previous.month == next.month ? '' : 'not '}expired`)
         isExpired = previous.month == next.month
         break
       case age.as('years') >= 1.0:
         // true for all but last of year
+        Log.debug(`'${previous.toFormat(Configuration.format.stamp)}' is >= 1y old, ${previous.year} ${previous.year == next.year ? '=' : 'not ='} ${next.year} ${previous.year == next.year ? '' : 'not '}expired`)
         isExpired = previous.year == next.year
         break
       default:
