@@ -5,6 +5,7 @@ import OS from 'os'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
+const HOME_PATH = OS.homedir()
 const MILLISECONDS_PER_SECOND = 1000
 const NANOSECONDS_PER_SECOND = 1000000000
 
@@ -42,7 +43,7 @@ const configurationPrototype = {
         'name': COMPUTER_NAME,
         'path': {
           'source': [ 
-            Path.join(Process.env.HOME, '.lotho')
+            Path.join(HOME_PATH, '.lotho')
           ],
           'target': `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${COMPUTER_NAME}`,
           'include': [],
@@ -57,7 +58,7 @@ const configurationPrototype = {
     ],
     'path': {
       'rsync': '/usr/local/bin/rsync',
-      'privateKey': Path.join(Process.env.HOME, '.ssh', 'id_rsa')
+      'privateKey': Path.join(HOME_PATH, '.ssh', 'id_rsa')
     }
   },
   'format': {
@@ -68,7 +69,7 @@ const configurationPrototype = {
   },
   'line': '-'.repeat(80),
   'logLevel': 'debug',
-  'logPath': 'console', // Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho.log'),
+  'logPath': 'console', // Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho.log'),
   'name': {
     'computer': COMPUTER_NAME,
     'content': 'current'
@@ -91,9 +92,9 @@ const configurationPrototype = {
     'start': {}
   },
   'path': {
-    'configuration': Path.join(Process.env.HOME, '.lotho', 'configuration.json'),
-    'home': Path.join(Process.env.HOME, '.lotho'),
-    'privateKey': Path.join(Process.env.HOME, '.ssh', 'id_rsa'),
+    'configuration': Path.join(HOME_PATH, '.lotho', 'configuration.json'),
+    'home': Path.join(HOME_PATH, '.lotho'),
+    'privateKey': Path.join(HOME_PATH, '.ssh', 'id_rsa'),
     'rsync': '/usr/local/bin/rsync',
     'start': Path.normalize(Path.join(__dirname, 'lotho.js'))
   },
@@ -114,11 +115,11 @@ const configurationPrototype = {
   },
   'task': {
     'logLevel': 'debug',
-    'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-task.log')
+    'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
     'logLevel': 'trace',
-    'logPath': Path.join(Process.env.HOME, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
+    'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'parameter': {
       'lotho': {}
     },

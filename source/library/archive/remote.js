@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { Log, FileSystem, Path, Process } from '@virtualpatterns/mablung'
+import { Log, FileSystem, Path } from '@virtualpatterns/mablung'
 import Connection from 'ssh2-sftp-client'
+import OS from 'os'
 
 import Archive from '../archive'
 import Configuration from '../../configuration'
@@ -18,10 +19,11 @@ remotePrototype.connect = async function () {
   
   let [ , computerName ] = match
 
+  let userInformation = OS.userInfo({ 'encoding': 'utf-8' })
   let privateKey = await FileSystem.readFile(Configuration.path.privateKey, { 'encoding': 'utf-8' })
 
   this.connection = new Connection()
-  await this.connection.connect({ 'host': computerName, 'username': Process.env.USER, 'privateKey': privateKey })
+  await this.connection.connect({ 'host': computerName, 'username': userInformation.username, 'privateKey': privateKey })
 
 }
 
