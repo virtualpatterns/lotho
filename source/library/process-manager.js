@@ -18,25 +18,20 @@ processManagerPrototype.startArchive = async function () {
 
   try {
 
-    let _option = {
-      'apps': [
-        {
-          'name': this.option.name,
-          'script': Configuration.path.start,
-          'args': [
-            ...Configuration.conversion.toParameter(Configuration.parameter.start),
-            '--configurationPath', Configuration.path.configuration,
-            '--logLevel', Configuration.logLevel,
-            '--logPath', 'console',
-            'run-schedule', this.option.name
-          ]
-        }
-      ]
-    }
+    let option = Configuration.getOption({
+      'name': this.option.name,
+      'script': Configuration.path.start,
+      'args': Configuration.getParameter({
+        '--configurationPath': Configuration.path.configuration,
+        '--logLevel': Configuration.logLevel,
+        '--logPath': 'console',
+        'run-schedule': this.option.name
+      }, Configuration.parameter.start)
+    }, Configuration.option.start)
 
-    Log.debug(`Starting '${this.option.name}' ...`)
+    Log.debug(`Starting '${option.name}' ...`)
 
-    let [ process ] = await this.start(_option)
+    let [ process ] = await this.start(option)
 
     Log.debug(`  Name: '${process.pm2_env.name}'`)
     Log.debug(`  PID: ${process.pid}`)

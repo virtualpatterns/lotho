@@ -2,7 +2,7 @@ import { Duration, DateTime } from 'luxon'
 import Is from '@pwn/is'
 import Merge from 'deepmerge'
 import OS from 'os'
-import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
+import { FileSystem, Path } from '@virtualpatterns/mablung'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
 const HOME_PATH = OS.homedir()
@@ -13,28 +13,6 @@ const configurationPrototype = {
   'archive': [],
   'conversion': {
     'toDuration': ([ seconds, nanoseconds ]) => Duration.fromMillis((seconds + nanoseconds / NANOSECONDS_PER_SECOND) * MILLISECONDS_PER_SECOND),
-    'toParameter': (parameter) => {
-
-      return Object.keys(parameter)
-        .filter((name) => parameter[name])
-        .map((name) => {
-    
-          let value = parameter[name]
-    
-          if (Is.function(value)) {
-            return [ name, value() ]
-          }
-          else if (Is.string(value)) {
-            return [ name, value ]
-          }
-          else {
-            return name
-          }
-    
-        })
-        .flat()
-        
-    },
     'toSeconds': ([ seconds, nanoseconds ]) => (seconds + nanoseconds / NANOSECONDS_PER_SECOND).toFixed(2)
   },
   'default': {
@@ -56,6 +34,14 @@ const configurationPrototype = {
         'schedule': '0 0 */1 * * *'
       }
     ],
+    'option': {
+      'rsync': { 
+        'cwd': '/usr/local/bin'
+      }
+    },
+    'parameter': {
+      'rsync': {}
+    },
     'path': {
       'rsync': '/usr/local/bin/rsync',
       'privateKey': Path.join(HOME_PATH, '.ssh', 'id_rsa')
@@ -69,26 +55,18 @@ const configurationPrototype = {
   },
   'line': '-'.repeat(80),
   'logLevel': 'debug',
-  'logPath': 'console', // Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho.log'),
+  'logPath': 'console',
   'name': {
     'computer': COMPUTER_NAME,
     'content': 'current'
   },
   'now': () => DateTime.local(),
+  'option': {
+    'rsync': {},
+    'start': {}
+  },
   'parameter': {
-    'rsync': {
-      '--archive': true,
-      '--backup': true,
-      '--delete': true,
-      '--delete-excluded': true,
-      '--executability': true,
-      '--itemize-changes': true,
-      '--relative': true,
-      '--rsh=ssh': true,
-      '--stats': true,
-      '--times': true,
-      '--whole-file': true
-    },
+    'rsync': {},
     'start': {}
   },
   'path': {
@@ -106,8 +84,7 @@ const configurationPrototype = {
     'countOfCreated': /number of created files: ([\d,]+)/im,
     'countOfUpdated': /number of regular files transferred: ([\d,]+)/im,
     'countOfDeleted': /number of deleted files: ([\d,]+)/im,
-    'remotePath': /^(.*):(.*)$/, // buckbeak.local:/Volumes/BUCKBEAK1/Backup/PODMORE
-    'stamp': /^(.*) to (.*)$/
+    'remotePath': /^(.*):(.*)$/
   },
   'range': {
     'progressInSeconds':  {
@@ -120,8 +97,13 @@ const configurationPrototype = {
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'debug',
+    'logLevel': 'trace',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
+    'option': {
+      'lotho': { 
+        'silent': true 
+      }
+    },
     'parameter': {
       'lotho': {}
     },
@@ -150,6 +132,35 @@ Configuration.merge = function (value) {
 
 Configuration.clear = function () {
   Object.setPrototypeOf(Configuration, configurationPrototype)
+}
+
+Configuration.getParameter = function (...parameter) {
+
+  parameter = parameter.reduce((accumulator, parameter) => Merge(accumulator, parameter), {})
+
+  return Object.keys(parameter)
+    .filter((name) => parameter[name])
+    .map((name) => {
+
+      let value = parameter[name]
+
+      if (Is.function(value)) {
+        return [ name, value() ]
+      }
+      else if (Is.string(value)) {
+        return [ name, value ]
+      }
+      else {
+        return name
+      }
+
+    })
+    .flat()
+    
+}
+
+Configuration.getOption = function (...option) {
+  return option.reduce((accumulator, option) => Merge(accumulator, option), {})
 }
 
 export default Configuration

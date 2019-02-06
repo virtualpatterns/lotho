@@ -57,11 +57,11 @@ remotePrototype.copyExpired = function (previous, next) {
     let previousPath = Path.join(targetPath, previous.toFormat(Configuration.format.stamp))
     let nextPath = Path.join(targetPath, next.toFormat(Configuration.format.stamp))
   
-    Log.trace(`Connection.exec('cp -Rnp "${previousPath}/" "${nextPath}"', (error, stream) => { ... })`)
-    this.connection.client.exec(`cp -Rnp "${previousPath}/" "${nextPath}"`, (error, stream) => {
+    Log.trace(`Connection.exec('cp -Rnpv "${previousPath}/" "${nextPath}"', (error, stream) => { ... })`)
+    this.connection.client.exec(`cp -Rnpv "${previousPath}/" "${nextPath}"`, (error, stream) => {
 
       if (error) {
-        Log.error(error, `Connection.exec('cp -Rnp "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
+        Log.error(error, `Connection.exec('cp -Rnpv "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
         reject(new ArchivePurgeError())
       }
       else {

@@ -39,4 +39,36 @@ describe('configuration', function () {
 
   })
 
+  describe('getParameter(...parameter)', function () {
+
+    it('should have 0 items', function () {
+      Assert.equal(Configuration.getParameter({}).length, 0)
+    })
+
+    it('should be [ \'a\' ]', function () {
+      Assert.deepEqual(Configuration.getParameter({ 'a': true }), [ 'a' ])
+    })
+
+    it('should be [ \'a\' ]', function () {
+      Assert.deepEqual(Configuration.getParameter({ 'a': true, 'b': false }), [ 'a' ])
+    })
+
+    it('should be [ \'a\', \'b\' ]', function () {
+      Assert.deepEqual(Configuration.getParameter({ 'a': 'b' }), [ 'a', 'b' ])
+    })
+
+    it('should be [ \'a\', \'b\' ]', function () {
+      Assert.deepEqual(Configuration.getParameter({ 'a': () => 'b' }), [ 'a', 'b' ])
+    })
+
+    it('should have 0 items', function () {
+      Assert.equal(Configuration.getParameter({}, {}).length, 0)
+    })
+
+    it('should be [ \'a\' ]', function () {
+      Assert.deepEqual(Configuration.getParameter({ 'a': true }, { 'b': false }), [ 'a' ])
+    })
+
+  })
+
 })

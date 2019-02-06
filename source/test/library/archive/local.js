@@ -128,6 +128,36 @@ describe('local', function () {
 
     })
 
+    describe('(with a remote source)', function () {
+
+      let rootPath = null
+      let option = null
+
+      before(async function () {
+
+        rootPath = 'resource/test/library/archive/empty'
+        option = {
+          'name': this.test.parent.title,
+          'path': {
+            'source': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/source`,
+            'target': `${rootPath}/target`
+          }
+        }
+  
+        await Local.createArchive(option).synchronize(stamp)
+
+      })
+
+      it('should create the content directory', async function () {
+        Assert.isTrue(await FileSystem.pathExists(`${option.path.target}/${Configuration.name.content}`))
+      })
+
+      after(function () {
+        return FileSystem.remove(`${option.path.target}/${Configuration.name.content}`)
+      })
+
+    })
+
     describe('(with a file in source)', function () {
 
       let rootPath = null
@@ -322,6 +352,37 @@ describe('local', function () {
 
       it('should have deleted 0 path', function () {
         Assert.equal(result.countOfDeleted, 0)
+      })
+
+      after(function () {
+        return FileSystem.remove(`${option.path.target}/${Configuration.name.content}`)
+      })
+
+    })
+
+    describe('(with an excluded file w/ spaces in source)', function () {
+
+      let rootPath = null
+      let option = null
+
+      before(async function () {
+
+        rootPath = 'resource/test/library/archive/excluded space'
+        option = {
+          'name': this.test.parent.title,
+          'path': {
+            'source': `${rootPath}/source`,
+            'target': `${rootPath}/target`,
+            'exclude': 'a and b.txt'
+          }
+        }
+  
+        await Local.createArchive(option).synchronize(stamp)
+
+      })
+
+      it('should not create the excluded file', async function () {
+        Assert.isFalse(await FileSystem.pathExists(`${option.path.target}/${Configuration.name.content}/a and b.txt`))
       })
 
       after(function () {

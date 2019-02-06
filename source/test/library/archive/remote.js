@@ -53,7 +53,7 @@ describe('remote', function () {
           'name': this.test.parent.title,
           'path': {
             'source': `${rootPath}/source`,
-            'target': `${Configuration.name.computer}.local:"${__dirname}/../../../../${rootPath}/target"`
+            'target': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/target`
           }
         }
 
@@ -95,7 +95,7 @@ describe('remote', function () {
           'name': this.test.parent.title,
           'path': {
             'source': `${rootPath}/source`,
-            'target': `${Configuration.name.computer}.local:"${__dirname}/../../../../${rootPath}/target"`
+            'target': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/target`
           }
         }
   
@@ -129,6 +129,39 @@ describe('remote', function () {
           FileSystem.remove(`${targetPath}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}`)
         ])
+      })
+
+    })
+
+    describe('(with an excluded file w/ spaces in source)', function () {
+
+      let rootPath = null
+      let targetPath = null
+      let option = null
+
+      before(async function () {
+
+        rootPath = 'resource/test/library/archive/excluded space'
+        targetPath = `${rootPath}/target`
+        option = {
+          'name': this.test.parent.title,
+          'path': {
+            'source': `${rootPath}/source`,
+            'target': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/target`,
+            'exclude': 'a and b.txt'
+          }
+        }
+  
+        await Remote.createArchive(option).synchronize(stamp)
+
+      })
+
+      it('should not create the excluded file', async function () {
+        Assert.isFalse(await FileSystem.pathExists(`${targetPath}/${Configuration.name.content}/a and b.txt`))
+      })
+
+      after(function () {
+        return FileSystem.remove(`${option.path.target}/${Configuration.name.content}`)
       })
 
     })

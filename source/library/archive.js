@@ -132,18 +132,38 @@ archivePrototype.synchronize = function (stamp) {
   return new Promise(async (resolve, reject) => {
 
     try {
-     
-      let parameter = [
-        ...Configuration.conversion.toParameter(Configuration.parameter.rsync),
-        `--backup-dir=..${Archive.getSeparator(this.option.path.target)}${stamp.toFormat(Configuration.format.stamp)}`,
-        ...this.option.path.include.map((path) => `--include=${path}`),
-        ...this.option.path.exclude.map((path) => `--exclude=${path}`),
-        ...this.option.path.source.map((path) => `${path}${Archive.getSeparator(path)}`),
-        `${this.option.path.target}${Archive.getSeparator(this.option.path.target)}${Configuration.name.content}`
+
+      let parameter = {}
+
+      parameter['--backup'] = true
+      parameter[`--backup-dir=..${Archive.getSeparator(this.option.path.target)}${stamp.toFormat(Configuration.format.stamp)}`] = true
+
+      this.option.path.include.forEach((path) => parameter[`--include=${path}`] = true)
+      this.option.path.exclude.forEach((path) => parameter[`--exclude=${path}`] = true)
+
+      this.option.path.source.forEach((path) => parameter[Archive.getPath(path)] = true)
+      parameter[Archive.getPath(this.option.path.target, Configuration.name.content)] = true
+
+      parameter = [
+        ...Configuration.getParameter({
+          '--archive': true,
+          '--delete': true,
+          '--delete-excluded': true,
+          '--executability': true,
+          '--itemize-changes': true,
+          '--relative': true,
+          '--rsh=ssh': true,
+          '--stats': true,
+          '--times': true,
+          '--whole-file': true
+        }, Configuration.parameter.rsync),
+        ...Configuration.getParameter(parameter)
       ]
+
+      let option = Configuration.getOption(Configuration.option.rsync)
       
-      Log.trace({ parameter }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter) ...`)
-      let process = ChildProcess.spawn(Configuration.path.rsync, parameter)
+      Log.trace({ parameter, option }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter, option) ...`)
+      let process = ChildProcess.spawn(Configuration.path.rsync, parameter, option)
 
       let progress = Process.hrtime()
       let stdout = ''
@@ -353,15 +373,29 @@ Archive.selectArchive = function (option) {
   return this.selectArchiveClass(option).createArchive(option)
 }
 
-Archive.getSeparator = function (value) {
+Archive.getSeparator = function (path) {
 
   let countBackwardSlash = 0
   let countForwardSlash = 0
 
-  while(Configuration.pattern.backwardSlash.exec(value) != null) countBackwardSlash +=1
-  while(Configuration.pattern.forwardSlash.exec(value) != null) countForwardSlash +=1
+  while(Configuration.pattern.backwardSlash.exec(path) != null) countBackwardSlash +=1
+  while(Configuration.pattern.forwardSlash.exec(path) != null) countForwardSlash +=1
 
   return countBackwardSlash > countForwardSlash ? '\\' : '/'
+
+}
+
+Archive.getPath = function (path, addToPath = '') {
+
+  let match = null
+
+  if (Is.not.null(match = Configuration.pattern.remotePath.exec(path))) {
+    let [ , computerName, path ] = match
+    return `${computerName}:"${path}${Archive.getSeparator(path)}${addToPath}"`
+  }
+  else {
+    return `${path}${Archive.getSeparator(path)}${addToPath}`
+  }
 
 }
 
