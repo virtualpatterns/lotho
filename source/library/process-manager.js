@@ -1,18 +1,18 @@
 import { Log } from '@virtualpatterns/mablung'
 import _ProcessManager from 'pm2'
-import Utilities from 'util'
+import Utility from 'util'
 
 import Configuration from '../configuration'
-import Is from './is'
+import Is from './utility/is'
 
 const processManagerPrototype = Object.create(_ProcessManager)
 
-processManagerPrototype.connect = Utilities.promisify(processManagerPrototype.connect)
-processManagerPrototype.start = Utilities.promisify(processManagerPrototype.start)
-processManagerPrototype.describe = Utilities.promisify(processManagerPrototype.describe)
-processManagerPrototype.stop = Utilities.promisify(processManagerPrototype.stop)
-processManagerPrototype.restart = Utilities.promisify(processManagerPrototype.restart)
-processManagerPrototype.delete = Utilities.promisify(processManagerPrototype.delete)
+processManagerPrototype.connect = Utility.promisify(processManagerPrototype.connect)
+processManagerPrototype.start = Utility.promisify(processManagerPrototype.start)
+processManagerPrototype.describe = Utility.promisify(processManagerPrototype.describe)
+processManagerPrototype.stop = Utility.promisify(processManagerPrototype.stop)
+processManagerPrototype.restart = Utility.promisify(processManagerPrototype.restart)
+processManagerPrototype.delete = Utility.promisify(processManagerPrototype.delete)
 
 processManagerPrototype.startArchive = async function () {
 
@@ -22,9 +22,9 @@ processManagerPrototype.startArchive = async function () {
       'name': this.option.name,
       'script': Configuration.path.start,
       'args': Configuration.getParameter({
-        '--configurationPath': Configuration.path.configuration,
-        '--logLevel': Configuration.logLevel,
-        '--logPath': 'console',
+        '--configuration-path': Configuration.path.configuration,
+        '--log-level': Configuration.logLevel,
+        '--log-path': 'console',
         'run-schedule': this.option.name
       }, Configuration.parameter.start)
     }, Configuration.option.start)

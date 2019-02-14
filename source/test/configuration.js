@@ -5,8 +5,7 @@ import Configuration from '../configuration'
 
 describe('configuration', function () {
 
-  let rootPath = Path.normalize(`${__dirname}/../../resource/test/configuration`)
-  let configurationPath = `${rootPath}/configuration.json`
+  let configurationPath = 'resource/test/configuration/configuration.json'
 
   describe('merge(value)', function () {
 

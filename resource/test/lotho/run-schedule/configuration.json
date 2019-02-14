@@ -11,6 +11,7 @@
       "schedule": "*/5 * * * * *"
     }
   ],
+  "isPublished": false,
   "parameter": {
     "rsync": {
       "--relative": false

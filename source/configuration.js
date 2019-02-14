@@ -6,14 +6,14 @@ import { FileSystem, Path } from '@virtualpatterns/mablung'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
 const HOME_PATH = OS.homedir()
-const MILLISECONDS_PER_SECOND = 1000
-const NANOSECONDS_PER_SECOND = 1000000000
+
+const MILLISECOND_PER_SECOND = 1000
+const NANOSECOND_PER_SECOND = 1000000000
 
 const configurationPrototype = {
   'archive': [],
   'conversion': {
-    'toDuration': ([ seconds, nanoseconds ]) => Duration.fromMillis((seconds + nanoseconds / NANOSECONDS_PER_SECOND) * MILLISECONDS_PER_SECOND),
-    'toSeconds': ([ seconds, nanoseconds ]) => (seconds + nanoseconds / NANOSECONDS_PER_SECOND).toFixed(2)
+    'toDuration': ([ second, nanosecond ]) => Duration.fromMillis((second + nanosecond / NANOSECOND_PER_SECOND) * MILLISECOND_PER_SECOND)
   },
   'default': {
     'archive': [
@@ -37,6 +37,9 @@ const configurationPrototype = {
     'option': {
       'rsync': { 
         'cwd': '/usr/local/bin'
+      },
+      'SNS': {
+        'service': {}
       }
     },
     'parameter': {
@@ -48,11 +51,10 @@ const configurationPrototype = {
     }
   },
   'format': {
-    'shortDuration': 'hh\'h\' mm\'m\' ss.SSS\'s\'',
-    'longDuration': 'yy\'y\' MM\'mo\' dd\'d\' hh\'h\' mm\'m\' ss.SSS\'s\'',
-    'schedule': '\'on\' DDDD \'at\' tt',
+    'schedule': '\'for\' DDDD \'at\' tt',
     'stamp': 'yyyy.LL.dd-HH.mm.ss.SSSZZZ'
   },
+  'isPublished': true,
   'line': '-'.repeat(80),
   'logLevel': 'debug',
   'logPath': 'console',
@@ -63,10 +65,30 @@ const configurationPrototype = {
   'now': () => DateTime.local(),
   'option': {
     'rsync': {},
+    'SFTP': {},
+    'SNS': {
+      'service': {
+        'region': 'us-east-1'
+      },
+      'message': {
+        'TopicArn': 'arn:aws:sns:us-east-1:118971425490:lotho'
+      }
+    },
     'start': {}
   },
   'parameter': {
-    'rsync': {},
+    'rsync': {
+      '--archive': true,
+      '--delete': true,
+      '--delete-excluded': true,
+      '--executability': true,
+      '--itemize-changes': true,
+      '--relative': true,
+      '--rsh=ssh': true,
+      '--stats': true,
+      '--times': true,
+      '--whole-file': true
+    },
     'start': {}
   },
   'path': {
@@ -87,8 +109,8 @@ const configurationPrototype = {
     'remotePath': /^(.*):(.*)$/
   },
   'range': {
-    'progressInSeconds':  {
-      'minimum': 1.0,
+    'progress':  {
+      'minimum': Duration.fromObject({ 'seconds': 5 }),
       'maximum': Infinity
     }
   },

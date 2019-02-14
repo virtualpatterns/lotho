@@ -1,16 +1,16 @@
 import { DateTime } from 'luxon'
 import { Log, FileSystem, Path } from '@virtualpatterns/mablung'
-import Connection from 'ssh2-sftp-client'
+import SFTP from 'ssh2-sftp-client'
 import OS from 'os'
 
-import Archive from '../archive'
 import Configuration from '../../configuration'
-import Is from '../is'
+import Is from '../utility/is'
+import Purged from './purged'
 
-import { ArchivePurgeError } from '../error/archive-error'
+import { RemoteCopyError } from '../error/remote-error'
 
-const archivePrototype = Archive.getArchivePrototype()
-const remotePrototype = Object.create(archivePrototype)
+const purgePrototype = Purged.getArchivePrototype()
+const remotePrototype = Object.create(purgePrototype)
 
 remotePrototype.connect = async function () {
 
@@ -22,8 +22,16 @@ remotePrototype.connect = async function () {
   let userInformation = OS.userInfo({ 'encoding': 'utf-8' })
   let privateKey = await FileSystem.readFile(Configuration.path.privateKey, { 'encoding': 'utf-8' })
 
-  this.connection = new Connection()
-  await this.connection.connect({ 'host': computerName, 'username': userInformation.username, 'privateKey': privateKey })
+  let option = Configuration.getOption({ 
+    'host': computerName, 
+    'username': userInformation.username, 
+    'privateKey': privateKey
+  }, Configuration.option.SFTP)
+      
+  this.connection = new SFTP()
+
+  Log.trace(option, 'Remote.connect(option) ...')
+  await this.connection.connect(option)
 
 }
 
@@ -57,31 +65,27 @@ remotePrototype.copyExpired = function (previous, next) {
     let previousPath = Path.join(targetPath, previous.toFormat(Configuration.format.stamp))
     let nextPath = Path.join(targetPath, next.toFormat(Configuration.format.stamp))
   
-    Log.trace(`Connection.exec('cp -Rnpv "${previousPath}/" "${nextPath}"', (error, stream) => { ... })`)
+    Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}/" "${nextPath}"', (error, stream) => { ... })`)
     this.connection.client.exec(`cp -Rnpv "${previousPath}/" "${nextPath}"`, (error, stream) => {
 
       if (error) {
-        Log.error(error, `Connection.exec('cp -Rnpv "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
-        reject(new ArchivePurgeError())
+        Log.error(error, `SFTP.exec('cp -Rnpv "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
+        reject(new RemoteCopyError(error))
       }
       else {
 
         let stdout = ''
         let stderr = ''
   
-        stream.on('data', this.onSTDOUT = (data) => {
+        stream.stdout.on('data', (data) => {
           stdout += data
         })
         
-        stream.stderr.on('data', this.onSTDERR = (data) => {
+        stream.stderr.on('data', (data) => {
           stderr += data
         })
 
-        stream.once('close', this.onClose = (code, signal) => {
-
-          stream.off('close', this.onClose)
-          stream.stderr.off('data', this.onSTDERR)
-          stream.off('data', this.onSTDOUT)
+        stream.once('close', (code) => {
 
           if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
 
@@ -90,7 +94,7 @@ remotePrototype.copyExpired = function (previous, next) {
           }
           else {
             if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
-            reject(new ArchivePurgeError())
+            reject(new RemoteCopyError(stderr))
           }
 
         })
@@ -123,12 +127,12 @@ remotePrototype.disconnect = async function () {
 
 }
 
-remotePrototype.purge = async function (stamp) {
+remotePrototype.archive = async function (stamp = Configuration.now()) {
 
   await this.connect()
 
   try {
-    return await archivePrototype.purge.call(this, stamp)
+    return await purgePrototype.archive.call(this, stamp)
   }
   finally {
     await this.disconnect()
@@ -136,11 +140,10 @@ remotePrototype.purge = async function (stamp) {
 
 }
 
-const Remote = Object.create(Archive)
+const Remote = Object.create(Purged)
 
 Remote.createArchive = function (option, prototype = remotePrototype) {
-  Log.trace(option, 'Remote.createArchive(option, prototype)')
-  return Archive.createArchive.call(this, option, prototype)
+  return Purged.createArchive.call(this, option, prototype)
 }
 
 Remote.getArchivePrototype = function () {

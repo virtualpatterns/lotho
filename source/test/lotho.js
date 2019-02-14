@@ -32,27 +32,21 @@ describe('lotho', function () {
   const lothoPrototype = Object.create({})
 
   lothoPrototype.stop = function () {
-  
     return new Promise((resolve) => {
-  
-      this.process.once('exit', (code) => {
-        resolve(code)
-      })
+      this.process.once('exit', resolve)
       this.process.kill()
-  
     })
-  
   }
   
   const Lotho = Object.create({})
   
-  Lotho.startLotho = function (parameter, prototype = lothoPrototype) {
+  Lotho.startLotho = function (parameter = [], option = {}, prototype = lothoPrototype) {
     Log.trace(parameter, 'Lotho.startLotho(parameter, prototype)')
   
     let lotho = Object.create(prototype)
 
-    let _parameter = Configuration.getParameter(parameter, Configuration.test.parameter.lotho)
-    let _option = Configuration.getOption(Configuration.test.option.lotho)
+    let _parameter = Configuration.getParameter(Configuration.test.parameter.lotho, parameter)
+    let _option = Configuration.getOption(Configuration.test.option.lotho, option)
   
     lotho.process = ChildProcess.fork(Configuration.test.path.lotho, _parameter, _option)
     
@@ -68,19 +62,17 @@ describe('lotho', function () {
     return lothoPrototype.isPrototypeOf(lotho)
   }
   
-  Lotho.run = function (parameter) {
+  Lotho.run = function (parameter = [], option = {}) {
     Log.trace({ parameter }, 'Lotho.startLotho(parameter, prototype)')
 
     return new Promise((resolve) => {
 
-      let _parameter = Configuration.getParameter(parameter, Configuration.test.parameter.lotho)
-      let _option = Configuration.getOption({ 'silent': true }, Configuration.test.option.lotho)
+      let _parameter = Configuration.getParameter(Configuration.test.parameter.lotho, parameter)
+      let _option = Configuration.getOption(Configuration.test.option.lotho, option)
         
       ChildProcess
         .fork(Configuration.test.path.lotho, _parameter, _option)
-        .once('exit', (code) => {
-          resolve(code)
-        })
+        .once('exit', resolve)
   
     })
   
@@ -107,19 +99,21 @@ describe('lotho', function () {
   })
 
   describe('create-configuration', function () {
-
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/create-configuration`)
-    let configurationPath = `${rootPath}/configuration.json`
-
+ 
+    let configurationPath = null
     let code = null
 
     before(async function () {
+
+      configurationPath = 'resource/test/lotho/create-configuration/configuration.json'
+
       code = await Lotho.run({
-        '--configurationPath': configurationPath,
-        '--logLevel': Configuration.logLevel, 
-        '--logPath': Configuration.logPath,
+        '--configuration-path': configurationPath,
+        '--log-level': Configuration.logLevel, 
+        '--log-path': Configuration.logPath,
         'create-configuration': true
       })
+
     })
 
     it('should exit with 0', function () {
@@ -138,11 +132,21 @@ describe('lotho', function () {
 
   describe('run-archive [name]', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/run-archive`)
-    let configurationPath = `${rootPath}/configuration.json`
+    let configurationPath = null
 
-    let targetPath1 = `${rootPath}/1/target`
-    let targetPath2 = `${rootPath}/2/target`
+    let targetPath1 = null
+    let targetPath2 = null
+
+    before(async function () {
+
+      let rootPath = 'resource/test/lotho/run-archive'
+
+      configurationPath = `${rootPath}/configuration.json`
+  
+      targetPath1 = `${rootPath}/1/target`
+      targetPath2 = `${rootPath}/2/target`
+  
+    })
 
     describe('(when called without a name)', function () {
 
@@ -150,9 +154,9 @@ describe('lotho', function () {
 
       before(async function () {
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'run-archive': true
         })
       })
@@ -184,9 +188,9 @@ describe('lotho', function () {
 
       before(async function () {
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'run-archive': '1.5'
         })
       })
@@ -211,9 +215,9 @@ describe('lotho', function () {
 
       before(async function () {
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'run-archive': '2'
         })
       })
@@ -240,19 +244,23 @@ describe('lotho', function () {
    
   describe('run-schedule <name>', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/run-schedule`)
-    let configurationPath = `${rootPath}/configuration.json`
-    let targetPath = `${rootPath}/target`
-
+    let targetPath = null
     let lotho = null
 
     before(async function () {
+
+      let rootPath = 'resource/test/lotho/run-schedule'
+      let configurationPath = `${rootPath}/configuration.json`
+
+      targetPath = `${rootPath}/target`
+    
       lotho = Lotho.startLotho({
-        '--configurationPath': configurationPath,
-        '--logLevel': Configuration.logLevel, 
-        '--logPath': Configuration.logPath,
+        '--configuration-path': configurationPath,
+        '--log-level': Configuration.logLevel, 
+        '--log-path': Configuration.logPath,
         'run-schedule': Package.name
       })
+
     })
 
     it('should create the content directory', function () {
@@ -268,11 +276,21 @@ describe('lotho', function () {
    
   describe('start-archive [name]', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/start-archive`)
-    let configurationPath = `${rootPath}/configuration.json`
+    let configurationPath = null
 
-    let targetPath1 = `${rootPath}/1/target`
-    let targetPath2 = `${rootPath}/2/target`
+    let targetPath1 = null
+    let targetPath2 = null
+
+    before(function () {
+
+      let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/start-archive`)
+
+      configurationPath = `${rootPath}/configuration.json`
+
+      targetPath1 = `${rootPath}/1/target`
+      targetPath2 = `${rootPath}/2/target`
+  
+    })
 
     describe('(when called without a name)', function () {
 
@@ -283,9 +301,9 @@ describe('lotho', function () {
       before(async function () {
         
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': true
         })
 
@@ -317,9 +335,9 @@ describe('lotho', function () {
       after(async function () {
 
         await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': true
         })
 
@@ -341,9 +359,9 @@ describe('lotho', function () {
       before(async function () {
 
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': '2'
         })
 
@@ -377,9 +395,9 @@ describe('lotho', function () {
       after(async function () {
 
         await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': '2'
         })
 
@@ -393,11 +411,21 @@ describe('lotho', function () {
 
   describe('stop-archive [name]', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/stop-archive`)
-    let configurationPath = `${rootPath}/configuration.json`
+    let configurationPath = null
 
-    let targetPath1 = `${rootPath}/1/target`
-    let targetPath2 = `${rootPath}/2/target`
+    let targetPath1 = null
+    let targetPath2 = null
+
+    before(function () {
+
+      let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/stop-archive`)
+
+      configurationPath = `${rootPath}/configuration.json`
+
+      targetPath1 = `${rootPath}/1/target`
+      targetPath2 = `${rootPath}/2/target`
+  
+    })
 
     describe('(when called without a name)', function () {
 
@@ -408,9 +436,9 @@ describe('lotho', function () {
       before(async function () {
   
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': true
         })
 
@@ -423,9 +451,9 @@ describe('lotho', function () {
         pid2 = await processManager.getArchivePID('2')
 
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': true
         })
   
@@ -461,9 +489,9 @@ describe('lotho', function () {
       before(async function () {
   
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': '2'
         })
         
@@ -472,9 +500,9 @@ describe('lotho', function () {
         pid2 = await processManager.getArchivePID('2')
         
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': true
         })
 
@@ -507,9 +535,9 @@ describe('lotho', function () {
       before(async function () {
   
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': true
         })
 
@@ -522,9 +550,9 @@ describe('lotho', function () {
         pid2 = await processManager.getArchivePID('2')
 
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': '2'
         })
   
@@ -545,9 +573,9 @@ describe('lotho', function () {
       after(async function () {
 
         await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': '1'
         })
 
@@ -564,11 +592,21 @@ describe('lotho', function () {
    
   describe('restart-archive [name]', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/restart-archive`)
-    let configurationPath = `${rootPath}/configuration.json`
+    let configurationPath = null
 
-    let targetPath1 = `${rootPath}/1/target`
-    let targetPath2 = `${rootPath}/2/target`
+    let targetPath1 = null
+    let targetPath2 = null
+
+    before(function () {
+
+      let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/restart-archive`)
+
+      configurationPath = `${rootPath}/configuration.json`
+
+      targetPath1 = `${rootPath}/1/target`
+      targetPath2 = `${rootPath}/2/target`
+  
+    })
 
     describe('(when called without a name)', function () {
 
@@ -581,9 +619,9 @@ describe('lotho', function () {
       before(async function () {
         
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': true
         })
 
@@ -591,9 +629,9 @@ describe('lotho', function () {
         pid2 = await processManager.getArchivePID('2')
         
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'restart-archive': true
         })
 
@@ -633,9 +671,9 @@ describe('lotho', function () {
       after(async function () {
 
         await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': true
         })
 
@@ -659,9 +697,9 @@ describe('lotho', function () {
       before(async function () {
 
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'start-archive': true
         })
 
@@ -669,9 +707,9 @@ describe('lotho', function () {
         pid2 = await processManager.getArchivePID('2')
         
         code = await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'restart-archive': '2'
         })
 
@@ -711,9 +749,9 @@ describe('lotho', function () {
       after(async function () {
 
         await Lotho.run({
-          '--configurationPath': configurationPath,
-          '--logLevel': Configuration.logLevel, 
-          '--logPath': Configuration.logPath,
+          '--configuration-path': configurationPath,
+          '--log-level': Configuration.logLevel, 
+          '--log-path': Configuration.logPath,
           'stop-archive': true
         })
 
@@ -735,8 +773,9 @@ describe('lotho', function () {
 })
 
 require('./library/archive/local')
+require('./library/archive/published')
 require('./library/archive/remote')
 require('./library/archive')
-require('./library/is')
+require('./library/utility/is')
 require('./library/process-manager')
 require('./configuration')

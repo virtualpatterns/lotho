@@ -8,14 +8,14 @@ describe('process-manager', function () {
 
   describe('startArchive()', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/startArchive`)
-    let configurationPath = `${rootPath}/configuration.json`
-
     let processManager = null
     let pid = null 
 
     before(async function () {
 
+      let rootPath = 'resource/test/library/process-manager/startArchive'
+      let configurationPath = `${rootPath}/configuration.json`
+  
       Configuration.merge(configurationPath)
 
       processManager = await ProcessManager.openProcessManager(Configuration.archive[0])
@@ -47,14 +47,14 @@ describe('process-manager', function () {
 
   describe('stopArchive()', function () {
 
-    let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
-    let configurationPath = `${rootPath}/configuration.json`
-
     let processManager = null
     let pid = null 
 
     before(async function () {
       
+      let rootPath = Path.normalize(`${__dirname}/../../../resource/test/library/process-manager/stopArchive`)
+      let configurationPath = `${rootPath}/configuration.json`
+  
       Configuration.merge(configurationPath)
 
       processManager = await ProcessManager.openProcessManager(Configuration.archive[0])

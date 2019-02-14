@@ -13,7 +13,7 @@
       "args": [
         "--bail", 
         "--timeout", "0",
-        "${workspaceFolder}/distributable/test/index.js"
+        "${workspaceFolder}/distributable/test/lotho.js"
       ],
       "internalConsoleOptions": "openOnSessionStart"
     },

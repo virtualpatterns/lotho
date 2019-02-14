@@ -1,6 +1,6 @@
 import { assert as Assert } from 'chai'
 
-import Is from '../../library/is'
+import Is from '../../../library/utility/is'
 
 describe('is', function () {
 
@@ -8,6 +8,10 @@ describe('is', function () {
   
     it('should be true', function () {
       Assert.isTrue(Is.emptyArray([]))
+    })
+  
+    it('should be false', function () {
+      Assert.isFalse(Is.emptyArray([ 0 ]))
     })
 
   })

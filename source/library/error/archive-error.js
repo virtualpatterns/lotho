@@ -1,5 +1,7 @@
 import { Path } from '@virtualpatterns/mablung'
 
+import Is from '../utility/is'
+
 function ArchiveError(message) {
 
   Error.call(this)
@@ -26,43 +28,25 @@ ArchiveClassNotFoundError.prototype = Object.create(ArchiveError.prototype)
 ArchiveClassNotFoundError.prototype.constructor = ArchiveClassNotFoundError
 ArchiveClassNotFoundError.prototype.name = ArchiveClassNotFoundError.name
 
-function ArchiveLockError(path) {
+function ArchiveArchiveError(value) {
 
   Error.call(this)
-  Error.captureStackTrace(this, ArchiveLockError)
+  Error.captureStackTrace(this, ArchiveArchiveError)
 
-  this.message = `Unable to lock/unlock the archive at ${Path.trim(path)}`
+  if (Is.error(value)) {
+    this.message = `Unable to archive one or more source paths (${value.message})`
+  }
+  else if (Is.string(value)) {
+    this.message = `Unable to archive one or more source paths\n\n${value}`
+  }
+  else {
+    this.message = 'Unable to archive one or more source paths'
+  }
 
 }
 
-ArchiveLockError.prototype = Object.create(ArchiveError.prototype)
-ArchiveLockError.prototype.constructor = ArchiveLockError
-ArchiveLockError.prototype.name = ArchiveLockError.name
+ArchiveArchiveError.prototype = Object.create(ArchiveError.prototype)
+ArchiveArchiveError.prototype.constructor = ArchiveArchiveError
+ArchiveArchiveError.prototype.name = ArchiveArchiveError.name
 
-function ArchiveSynchronizeError() {
-
-  Error.call(this)
-  Error.captureStackTrace(this, ArchiveSynchronizeError)
-
-  this.message = 'Unable to synchronize one or more source paths'
-
-}
-
-ArchiveSynchronizeError.prototype = Object.create(ArchiveError.prototype)
-ArchiveSynchronizeError.prototype.constructor = ArchiveSynchronizeError
-ArchiveSynchronizeError.prototype.name = ArchiveSynchronizeError.name
-
-function ArchivePurgeError() {
-
-  Error.call(this)
-  Error.captureStackTrace(this, ArchivePurgeError)
-
-  this.message = 'Unable to purge one or more expired paths'
-
-}
-
-ArchivePurgeError.prototype = Object.create(ArchiveError.prototype)
-ArchivePurgeError.prototype.constructor = ArchivePurgeError
-ArchivePurgeError.prototype.name = ArchivePurgeError.name
-
-export { ArchiveError, ArchiveClassNotFoundError, ArchiveSynchronizeError, ArchivePurgeError }
+export { ArchiveError, ArchiveClassNotFoundError, ArchiveArchiveError }

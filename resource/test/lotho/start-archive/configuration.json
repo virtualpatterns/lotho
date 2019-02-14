@@ -31,6 +31,7 @@
       "schedule": "*/7 * * * * *"
     }
   ],
+  "isPublished": false,
   "parameter": {
     "rsync": {
       "--relative": false

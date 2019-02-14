@@ -5,7 +5,7 @@ import { Process } from '@virtualpatterns/mablung'
 import Source from 'source-map-support'
 
 import Command from './library/command'
-import Is from './library/is'
+import Is from './library/utility/is'
 
 import Local from './library/archive/local'
 import Remote from './library/archive/remote'

@@ -3,14 +3,13 @@ import { FileSystem, Log, Path } from '@virtualpatterns/mablung'
 import Merge from 'deepmerge'
 
 import Configuration from '../../configuration'
+import Purged from './purged'
 
-import Archive from '../archive'
+const purgedPrototype = Purged.getArchivePrototype()
+const localPrototype = Object.create(purgedPrototype)
 
-const archivePrototype = Archive.getArchivePrototype()
-const localPrototype = Object.create(archivePrototype)
-
-localPrototype.getSynchronizeStatistic = function (stdout) {
-  return Merge(archivePrototype.getSynchronizeStatistic.call(this, stdout), { 'countOfDeleted': Local.getCountOfDeleted(stdout) })
+localPrototype.getArchiveStatistic = function (stdout) {
+  return Merge(purgedPrototype.getArchiveStatistic.call(this, stdout), { 'countOfDeleted': Local.getCountOfDeleted(stdout) })
 }
 
 localPrototype.getExpired = async function (current) {
@@ -46,10 +45,10 @@ localPrototype.deleteExpired = function (previous) {
 
 }
 
-const Local = Object.create(Archive)
+const Local = Object.create(Purged)
 
 Local.createArchive = function (option, prototype = localPrototype) {
-  return Archive.createArchive.call(this, option, prototype)
+  return Purged.createArchive.call(this, option, prototype)
 }
 
 Local.getArchivePrototype = function () {

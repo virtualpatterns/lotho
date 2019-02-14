@@ -1,11 +1,10 @@
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
 import _Command from 'commander'
 
+import Archive from './archive'
 import Configuration from '../configuration'
 import Package from '../../package.json'
 import ProcessManager from './process-manager'
-
-import Archive from './archive'
 
 import { CommandInvalidError } from './error/command-error'
 
@@ -14,30 +13,30 @@ const Command = Object.create(_Command)
 Command
   .version(Package.version)
   .description('Archive from source directories to target directory')
-  .option('--configurationPath <path>', `Configuration path, defaults to '${Path.trim(Configuration.path.configuration)}'`)
-  .option('--logLevel <path>', `Log level, one of 'fatal', 'error', 'warn', 'info', 'debug', or 'trace', defaults to '${Configuration.logLevel}'`)
-  .option('--logPath <path>', `Log file path, 'console' outputs to the console, defaults to '${Path.trim(Configuration.logPath)}'`)
+  .option('--configuration-path <path>', `Configuration path, defaults to '${Path.trim(Configuration.path.configuration)}'`)
+  .option('--log-level <path>', `Log level, one of 'fatal', 'error', 'warn', 'info', 'debug', or 'trace', defaults to '${Configuration.logLevel}'`)
+  .option('--log-path <path>', `Log file path, 'console' outputs to the console, defaults to '${Path.trim(Configuration.logPath)}'`)
 
 Command
   .command('create-configuration')
   .alias('no-op')
   .description(`Create a default configuration at the path specified if one doesn't exist, defaults to '${Path.trim(Configuration.path.configuration)}'`)
-  .action(() => Command.execute(() => {}))
+  .action(() => Command.onAction(() => {}))
 
 Command
   .command('run-archive [name]')
   .description('Process the archive(s) according to the configuration')
-  .action((name) => Command.executeArchive(name, (archive) => Archive.selectArchive(archive).archive()))
+  .action((name) => Command.onArchive(name, (archive) => Archive.selectArchive(archive).archive()))
 
 Command
   .command('run-schedule <name>')
   .description('Schedule the archive according to the configuration')
-  .action((name) => Command.executeArchive(name, (archive) => Archive.selectArchive(archive).startSchedule()))
+  .action((name) => Command.onArchive(name, (archive) => Archive.selectArchive(archive).startSchedule()))
 
 Command
   .command('start-archive [name]')
   .description('Start both the process manager and the schedule(s)')
-  .action((name) => Command.executeArchive(name, async (archive) => {
+  .action((name) => Command.onArchive(name, async (archive) => {
 
     let processManager = await ProcessManager.openProcessManager(archive)
 
@@ -53,7 +52,7 @@ Command
 Command
   .command('stop-archive [name]')
   .description('Stop and delete the schedule(s) (the process manager remains running)')
-  .action((name) => Command.executeArchive(name, async (archive) => {
+  .action((name) => Command.onArchive(name, async (archive) => {
 
     let processManager = await ProcessManager.openProcessManager(archive)
 
@@ -69,7 +68,7 @@ Command
 Command
   .command('restart-archive [name]')
   .description('Stop and re-start the schedule(s)')
-  .action((name) => Command.executeArchive(name, async (archive) => {
+  .action((name) => Command.onArchive(name, async (archive) => {
 
     let processManager = await ProcessManager.openProcessManager(archive)
 
@@ -82,15 +81,11 @@ Command
 
   }))
 
-Command.on('command:*', Command.onCommandInvalid = () => Command.execute(() => {
+Command.on('command:*', () => Command.onAction(() => {
   throw new CommandInvalidError(Command.args)
 }))
 
-Process.on('exit', () => {
-  Command.off('command:*', Command.onCommandInvalid)
-})
-
-Command.execute = async function (fn) {
+Command.onAction = async function (fn) {
     
   try {
 
@@ -123,7 +118,7 @@ Command.execute = async function (fn) {
 
     try {
 
-      Process.on('SIGHUP', Command.onSIGHUP = () => {
+      Process.on('SIGHUP', () => {
         Log.debug('Process.on(\'SIGHUP\', () => { ... })')
 
         if (Configuration.logPath == 'console') {
@@ -135,19 +130,13 @@ Command.execute = async function (fn) {
     
       })
 
-      Process.once('uncaughtException', Command.onUncaughtException = (error) => {
+      Process.once('uncaughtException', (error) => {
         Log.error(error, 'Process.once(\'uncaughtException\', (error) => { ... })')
         Process.exit(3)
       })
   
-      Process.on('warning', Command.onWarning = (error) => {
+      Process.on('warning', (error) => {
         Log.error(error, 'Process.on(\'warning\', (error) => { ... })')
-      })
-  
-      Process.on('exit', () => {
-        Process.off('warning', Command.onWarning)
-        Process.off('uncaughtException', Command.onUncaughtException)
-        Process.off('SIGHUP', Command.onSIGHUP)
       })
       
       await fn()
@@ -166,9 +155,9 @@ Command.execute = async function (fn) {
 
 }
 
-Command.executeArchive = function (name, fn) {
+Command.onArchive = function (name, fn) {
 
-  return Command.execute(async () => {
+  return Command.onAction(async () => {
 
     let archive = Configuration.archive.filter((archive) => name ? archive.name == name : true)
 
