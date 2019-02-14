@@ -122,7 +122,7 @@ describe('published', function () {
     
       describe('onScheduled()', function () {
     
-        it('should publish', function () {
+        it('should publish (2)', function () {
           return archive.whenScheduled()
         })
   
@@ -139,7 +139,11 @@ describe('published', function () {
           return archive.whenScheduled()
         })
   
-        it('should publish', function () {
+        it('should publish (3)', function () {
+          return archive.whenSucceeded()
+        })
+  
+        it('should not publish', function () {
           return archive.whenSucceeded()
         })
   
@@ -156,7 +160,7 @@ describe('published', function () {
           return archive.whenScheduled()
         })
   
-        it('should publish', function () {
+        it('should publish (2)', function () {
           return archive.whenUnscheduled()
         })
   
@@ -203,7 +207,7 @@ describe('published', function () {
           return archive.whenScheduled()
         })
   
-        it('should publish', function () {
+        it('should publish (3)', function () {
           return archive.whenFailed()
         })
   

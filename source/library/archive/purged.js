@@ -1,3 +1,4 @@
+import { Log } from '@virtualpatterns/mablung'
 import Merge from 'deepmerge'
 
 import Published from './published'
@@ -7,9 +8,11 @@ const publishedPrototype = Published.getArchivePrototype()
 const purgedPrototype = Object.create(publishedPrototype)
 
 purgedPrototype.archive = async function (stamp = Configuration.now()) {
-
+     
   let result = await publishedPrototype.archive.call(this, stamp)
     
+  Log.debug(`Purging '${this.option.name}' ...`)
+
   let current = stamp
   let expired = await this.getExpired(current)
 

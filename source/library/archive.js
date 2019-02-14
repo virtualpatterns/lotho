@@ -17,7 +17,7 @@ archivePrototype.startSchedule = function () {
 
   if (Is.null(this.job)) { 
 
-    Log.debug(`Scheduling archive '${this.option.name}' ...`)
+    Log.debug(`Scheduling '${this.option.name}' ...`)
 
     this.job = new Job(this.option.schedule, async () => {
 
@@ -42,7 +42,7 @@ archivePrototype.startSchedule = function () {
   
     this.job.start()
       
-    Log.debug(`Archive '${this.option.name}' scheduled ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+    Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
 
     return this.onScheduled()
 
@@ -54,8 +54,6 @@ archivePrototype.stopSchedule = function () {
 
   if (Is.not.null(this.job)) { 
 
-    Log.debug(`Unscheduling archive '${this.option.name}' ...`)
-
     this.job.stop()
     this.job = null
 
@@ -64,6 +62,8 @@ archivePrototype.stopSchedule = function () {
 
     Process.off('SIGTERM', this.onSIGTERM)
     this.onSIGTERM = null
+
+    Log.debug(`Unscheduled '${this.option.name}'`)
 
     return this.onUnscheduled()
 
@@ -76,7 +76,6 @@ archivePrototype.getNextSchedule = function () {
 }
 
 archivePrototype.onSchedule = async function () {
-  Log.debug(Configuration.line)
 
   let lockPath = Path.join(Configuration.path.home, `archive.${this.id}.lock`)
 
@@ -98,7 +97,7 @@ archivePrototype.onSchedule = async function () {
     throw error
   }
   finally {
-    Log.debug(`Archive '${this.option.name}' next scheduled ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+    if (Is.not.null(this.getNextSchedule())) Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
     await FileSystem.unlink(lockPath)
   }
 
@@ -109,7 +108,9 @@ archivePrototype.archive = function (stamp = Configuration.now()) {
   return new Promise((resolve, reject) => {
 
     try {
-        
+   
+      Log.debug(`Archiving '${this.option.name}' ...`)
+
       let parameter = {}
 
       parameter['--backup'] = true
@@ -207,7 +208,7 @@ archivePrototype.archive = function (stamp = Configuration.now()) {
         process.stderr.off('data', this.onSTDERR)
         process.stdout.off('data', this.onSTDOUT)
 
-        Log.error(error, 'ChildProcess.on(\'error\'), (error) => { ... })')
+        // Log.error(error, 'ChildProcess.on(\'error\'), (error) => { ... })')
         reject(new ArchiveArchiveError(error))
 
       })
@@ -229,7 +230,7 @@ archivePrototype.archive = function (stamp = Configuration.now()) {
           })
         }
         else {
-          if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
+          // if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
           reject(new ArchiveArchiveError(stderr))
         }
 

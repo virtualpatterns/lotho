@@ -16,27 +16,30 @@ publishedPrototype.onScheduled = async function () {
     message += `Name: ${this.option.name}\n`
   
     this.option.path.source.forEach((path, index) => {
-      message += `${index == 0 ? 'Source:' : ' and:' } ${path}\n`
+      message += `${index == 0 ? 'Source:' : 'and:' } ${path}\n`
     })
   
     message += `Target: ${this.option.path.target}\n`
   
     this.option.path.include.forEach((path, index) => {
-      message += `${index == 0 ? 'Include:' : ' and:' }: ${path}\n`
+      message += `${index == 0 ? 'Include:' : 'and:' } ${path}\n`
     })
   
     this.option.path.exclude.forEach((path, index) => {
-      message += `${index == 0 ? 'Exclude:' : ' and:' }: ${path}\n`
+      message += `${index == 0 ? 'Exclude:' : 'and:' } ${path}\n`
     })
   
     message += `Schedule: ${Schedule.toString(this.option.schedule, true)}`
   
     let option = Configuration.getOption({
-      'Subject': `Archive '${this.option.name}' SCHEDULED`,
+      'Subject': `'${this.option.name}' scheduled`,
       'Message': message
     }, Configuration.option.SNS.message)
   
-    await this.service.publish(option).promise()
+    
+    Log.trace(option, 'SNS.publish(option) ...')
+    let data = await this.service.publish(option).promise()
+    Log.trace(data, 'SNS.publish(option)')
 
   }
 
@@ -49,11 +52,13 @@ publishedPrototype.onUnscheduled = async function () {
   if (Configuration.isPublished) {
       
     let option = Configuration.getOption({
-      'Subject': `Archive '${this.option.name}' UNSCHEDULED`,
+      'Subject': `'${this.option.name}' unscheduled`,
       'Message': 'No message'
     }, Configuration.option.SNS.message)
-
-    await this.service.publish(option).promise()
+  
+    Log.trace(option, 'SNS.publish(option) ...')
+    let data = await this.service.publish(option).promise()
+    Log.trace(data, 'SNS.publish(option)')
 
   }
 
@@ -63,7 +68,11 @@ publishedPrototype.onUnscheduled = async function () {
 
 publishedPrototype.onSucceeded = async function (result) {
 
-  if (Configuration.isPublished) {
+  if (Configuration.isPublished &&
+      result.statistic.countOfCreated +
+      result.statistic.countOfUpdated +
+      (result.statistic.countOfDeleted || 0) +
+      result.statistic.countOfPurged > 0) {
           
     let message = ''
     message += `Stamp: ${result.stamp.toFormat(Configuration.format.stamp)}\n`
@@ -74,11 +83,13 @@ publishedPrototype.onSucceeded = async function (result) {
     message += `Purged: ${result.statistic.countOfPurged}`
 
     let option = Configuration.getOption({
-      'Subject': `Archive '${this.option.name}' SUCCEEDED on '${Configuration.name.computer}'`,
+      'Subject': `'${this.option.name}' succeeded`,
       'Message': message
     }, Configuration.option.SNS.message)
-
-    await this.service.publish(option).promise()
+  
+    Log.trace(option, 'SNS.publish(option) ...')
+    let data = await this.service.publish(option).promise()
+    Log.trace(data, 'SNS.publish(option)')
 
   }
 
@@ -91,11 +102,13 @@ publishedPrototype.onFailed = async function (error) {
   if (Configuration.isPublished) {
           
     let option = Configuration.getOption({
-      'Subject': `Archive '${this.option.name}' FAILED`,
+      'Subject': `'${this.option.name}' FAILED`,
       'Message': error.stack
     }, Configuration.option.SNS.message)
   
-    await this.service.publish(option).promise()
+    Log.trace(option, 'SNS.publish(option) ...')
+    let data = await this.service.publish(option).promise()
+    Log.trace(data, 'SNS.publish(option)')
 
   }
 
