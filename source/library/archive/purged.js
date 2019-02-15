@@ -9,7 +9,7 @@ const purgedPrototype = Object.create(publishedPrototype)
 
 purgedPrototype.archive = async function (stamp = Configuration.now()) {
      
-  let result = await publishedPrototype.archive.call(this, stamp)
+  let _result = await publishedPrototype.archive.call(this, stamp)
     
   Log.debug(`Purging '${this.option.name}' ...`)
 
@@ -21,7 +21,10 @@ purgedPrototype.archive = async function (stamp = Configuration.now()) {
     await this.deleteExpired(_expired.previous)
   }
 
-  return { 'stamp': stamp, 'statistic': Merge(result.statistic, { 'countOfPurged': expired.length }) }
+  let result = { 'stamp': stamp, 'statistic': Merge(_result.statistic, { 'countOfPurged': expired.length }) }
+
+  Log.debug(`Purged: ${result.statistic.countOfPurged}`)
+  return result
 
 }
 

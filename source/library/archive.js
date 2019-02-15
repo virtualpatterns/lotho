@@ -84,8 +84,7 @@ archivePrototype.onSchedule = async function () {
 
   try {
 
-    let result = null
-    result = await this.archive()
+    let result = await this.archive()
 
     await this.onSucceeded(result)
 
@@ -223,11 +222,17 @@ archivePrototype.archive = function (stamp = Configuration.now()) {
         Log.trace(`ChildProcess.on('exit'), (${code}, ${Is.not.null(signal) ? `'${signal}'` : signal}) => { ... })`)
         if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
 
-        if (code == 0) {          
-          resolve({
-            'stamp': stamp,
-            'statistic': this.getArchiveStatistic(stdout)
-          })
+        if (code == 0) {  
+          
+          let result = { 'stamp': stamp, 'statistic': this.getArchiveStatistic(stdout) }
+
+          Log.debug(`Scanned: ${result.statistic.countOfScanned}`)
+          Log.debug(`Created: ${result.statistic.countOfCreated}`)
+          Log.debug(`Updated: ${result.statistic.countOfUpdated}`)
+          if (result.statistic.countOfDeleted) Log.debug(`Deleted: ${result.statistic.countOfDeleted}`)
+
+          resolve(result)
+
         }
         else {
           // if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
@@ -435,7 +440,7 @@ Archive.isExpired = function (current, previous, next) {
         isExpired = false
     }
 
-    if (isExpired) message.forEach((message) => Log.debug(message))
+    if (isExpired) message.forEach((message) => Log.trace(message))
 
     return isExpired
       

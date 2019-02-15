@@ -25,7 +25,8 @@ remotePrototype.connect = async function () {
   let option = Configuration.getOption({ 
     'host': computerName, 
     'username': userInformation.username, 
-    'privateKey': privateKey
+    'privateKey': privateKey //, 
+    // 'debug': Log.trace.bind(Log)
   }, Configuration.option.SFTP)
       
   this.connection = new SFTP()

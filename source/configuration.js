@@ -78,11 +78,15 @@ const configurationPrototype = {
   },
   'parameter': {
     'rsync': {
-      '--archive': true,
+      // --archive is equivalent to -rlptgoD ... removing -l (symlinks) -D (devices)
       '--delete': true,
       '--delete-excluded': true,
       '--executability': true,
+      '--group': true,
       '--itemize-changes': true,
+      '--owner': true,
+      '--perms': true,
+      '--recursive': true,
       '--relative': true,
       '--rsh=ssh': true,
       '--stats': true,

@@ -123,18 +123,18 @@ describe('remote', function () {
     
           let archive = Remote.createArchive(option)
   
-          await FileSystem.writeJson(`${option.path.source}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+          await FileSystem.writeJson(`${option.path.source}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
           result = await archive.archive(stamp)
   
           await Remote.whenElapsed(1000)
   
-          await FileSystem.writeJson(`${option.path.source}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+          await FileSystem.writeJson(`${option.path.source}/abc or def.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
           result = await archive.archive(stamp)
   
         })
   
         it('should create a record of the original file', async function () {
-          Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}/a.json`))
+          Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}/abc or def.json`))
         })
   
         it('should have created 0 paths', function () {
@@ -147,7 +147,7 @@ describe('remote', function () {
   
         after(function () {
           return Promise.all([
-            FileSystem.remove(`${option.path.source}/a.json`),
+            FileSystem.remove(`${option.path.source}/abc or def.json`),
             FileSystem.remove(`${targetPath}/${Configuration.name.content}`),
             FileSystem.remove(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}`)
           ])
@@ -256,11 +256,11 @@ describe('remote', function () {
                 next = previous.plus(toEndOfSmallUnit[0].toDuration())
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
-                await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+                await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
                 await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
   
                 result = await Remote.createArchive(option).archive(stamp)
-                value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+                value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
        
               })
   
@@ -299,11 +299,11 @@ describe('remote', function () {
                 next = previous.plus(toEndOfSmallUnit[0].toDuration())
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
-                await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-                await FileSystem.outputJson(`${targetPath}/${nextAsString}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+                await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+                await FileSystem.outputJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
   
                 result = await Remote.createArchive(option).archive(stamp)
-                value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+                value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
        
               })
   
@@ -414,11 +414,11 @@ describe('remote', function () {
             next = previous.plus(toEndOfYear[0].toDuration())
             nextAsString = next.toFormat(Configuration.format.stamp)
           
-            await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+            await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
             await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
   
             result = await Remote.createArchive(option).archive(stamp)
-            value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+            value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
     
           })
   
@@ -457,11 +457,11 @@ describe('remote', function () {
             next = previous.plus(toEndOfYear[0].toDuration())
             nextAsString = next.toFormat(Configuration.format.stamp)
           
-            await FileSystem.outputJson(`${targetPath}/${previousAsString}/a.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-            await FileSystem.outputJson(`${targetPath}/${nextAsString}/a.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
+            await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
+            await FileSystem.outputJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'value': 'def' }, { 'encoding': 'utf-8', 'spaces': 2 })
   
             result = await Remote.createArchive(option).archive(stamp)
-            value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/a.json`, { 'encoding': 'utf-8' })).value
+            value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
     
           })
   
