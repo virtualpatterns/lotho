@@ -8,6 +8,7 @@ import UUID from 'uuid/v4'
 
 import Configuration from '../configuration'
 import Is from './utility/is'
+import Package from '../../package.json'
 
 import { ArchiveClassNotFoundError, ArchiveArchiveError } from './error/archive-error'
 
@@ -21,6 +22,10 @@ archivePrototype.startSchedule = function () {
 
     this.job = new Job(this.option.schedule, async () => {
 
+      Log.debug(Configuration.line)
+      Log.debug(`Node.js ${Process.version} ${Package.name} ${Package.version}`)
+      Log.debug(Configuration.line)
+    
       try {
         await this.onSchedule()
       }
@@ -78,9 +83,7 @@ archivePrototype.getNextSchedule = function () {
 archivePrototype.onSchedule = async function () {
 
   let lockPath = Path.join(Configuration.path.home, `archive.${this.id}.lock`)
-
-  await FileSystem.mkdir(Path.dirname(lockPath), { 'recursive': true })
-  await FileSystem.writeFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
+  await FileSystem.outputFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
 
   try {
 
@@ -97,34 +100,61 @@ archivePrototype.onSchedule = async function () {
   }
   finally {
     if (Is.not.null(this.getNextSchedule())) Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
-    await FileSystem.unlink(lockPath)
+    await FileSystem.remove(lockPath)
   }
 
 }
 
-archivePrototype.archive = function (stamp = Configuration.now()) {
+archivePrototype.archive = async function (stamp = Configuration.now()) {
+
+  Log.debug(`Archiving '${this.option.name}' ...`)
+
+  let includePath = Path.join(Configuration.path.home, `archive.${this.id}.include`)
+  let include = this.option.path.include.reduce((accumulator, path) => `${accumulator}${path}\n`, '')
+
+  let excludePath = Path.join(Configuration.path.home, `archive.${this.id}.exclude`)
+  let exclude = this.option.path.exclude.reduce((accumulator, path) => `${accumulator}${path}\n`, '')
+
+  await Promise.all([
+    FileSystem.outputFile(includePath, include, { 'encoding': 'utf-8' }),
+    FileSystem.outputFile(excludePath, exclude, { 'encoding': 'utf-8' })
+  ])
+
+  let result = null
+
+  try {
+    result = await this._archive(stamp, includePath, excludePath)
+  }
+  finally {
+    await Promise.all([
+      FileSystem.remove(includePath),
+      FileSystem.remove(excludePath)
+    ])
+  }
+
+  return result
+
+}
+
+archivePrototype._archive = function (stamp, includePath, excludePath) {
 
   return new Promise((resolve, reject) => {
 
     try {
-   
-      Log.debug(`Archiving '${this.option.name}' ...`)
 
-      let parameter = {}
+      let backupPath = `..${Archive.getSeparator(this.option.path.target)}${stamp.toFormat(Configuration.format.stamp)}`
 
-      parameter['--backup'] = true
-      parameter[`--backup-dir=..${Archive.getSeparator(this.option.path.target)}${stamp.toFormat(Configuration.format.stamp)}`] = true
-
-      this.option.path.include.forEach((path) => parameter[`--include=${path}`] = true)
-      this.option.path.exclude.forEach((path) => parameter[`--exclude=${path}`] = true)
-
-      this.option.path.source.forEach((path) => parameter[Archive.getPath(path)] = true)
-      parameter[Archive.getPath(this.option.path.target, Configuration.name.content)] = true
-
-      parameter = [
-        ...Configuration.getParameter(Configuration.parameter.rsync),
-        ...Configuration.getParameter(parameter)
-      ]
+      let parameter = Configuration.getParameter(
+        { 
+          '--backup': true, 
+          '--backup-dir': backupPath, 
+          '--include-from': includePath, 
+          '--exclude-from': excludePath 
+        },
+        Configuration.parameter.rsync,
+        this.option.path.source.map((path) => Archive.getPath(path)),
+        [ Archive.getPath(this.option.path.target, Configuration.name.content) ]
+      )
 
       let option = Configuration.getOption(Configuration.option.rsync)
       
@@ -229,7 +259,7 @@ archivePrototype.archive = function (stamp = Configuration.now()) {
           Log.debug(`Scanned: ${result.statistic.countOfScanned}`)
           Log.debug(`Created: ${result.statistic.countOfCreated}`)
           Log.debug(`Updated: ${result.statistic.countOfUpdated}`)
-          if (result.statistic.countOfDeleted) Log.debug(`Deleted: ${result.statistic.countOfDeleted}`)
+          if (Is.not.undefined(result.statistic.countOfDeleted)) Log.debug(`Deleted: ${result.statistic.countOfDeleted}`)
 
           resolve(result)
 
@@ -384,7 +414,7 @@ Archive.getIntegerStatistic = function (pattern, stdout) {
 }
 
 Archive.isExpired = function (current, previous, next) {
-  Log.trace(`Archive.isExpired('${current.toFormat(Configuration.format.stamp)}', '${previous.toFormat(Configuration.format.stamp)}', '${next.toFormat(Configuration.format.stamp)}')`)
+  // Log.trace(`Archive.isExpired('${current.toFormat(Configuration.format.stamp)}', '${previous.toFormat(Configuration.format.stamp)}', '${next.toFormat(Configuration.format.stamp)}')`)
 
   if (previous < next && next < current) {
 
@@ -397,50 +427,51 @@ Archive.isExpired = function (current, previous, next) {
 
     switch (true) {
       case age.as('seconds') < 1.0:
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1s old`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1s old`)
         isExpired = false
         break
       case age.as('minutes') < 1.0:
         // true for all but last of second
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1m old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.second}s ${previous.second == next.second ? '=' : 'not ='} ${next.second}s`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1m old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.second}s ${previous.second == next.second ? '=' : 'not ='} ${next.second}s`)
         isExpired = previous.second == next.second
         break
       case age.as('hours') < 1.0:
         // true for all but last of minute
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1h old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.minute}m ${previous.minute == next.minute ? '=' : 'not ='} ${next.minute}m`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1h old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.minute}m ${previous.minute == next.minute ? '=' : 'not ='} ${next.minute}m`)
         isExpired = previous.minute == next.minute
         break
       case age.as('days') < 1.0:
         // true for all but last of hour
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1d old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.hour}h ${previous.hour == next.hour ? '=' : 'not ='} ${next.hour}h`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1d old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.hour}h ${previous.hour == next.hour ? '=' : 'not ='} ${next.hour}h`)
         isExpired = previous.hour == next.hour
         break
       case age.as('months') < 1.0:
         // true for all but last of day
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1mo old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.day}d ${previous.day == next.day ? '=' : 'not ='} ${next.day}d`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1mo old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.day}d ${previous.day == next.day ? '=' : 'not ='} ${next.day}d`)
         isExpired = previous.day == next.day
         break
       case age.as('years') < 1.0:
         // true for all but last of month
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1y old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.month}mo ${previous.month == next.month ? '=' : 'not ='} ${next.month}mo`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' < 1y old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.month}mo ${previous.month == next.month ? '=' : 'not ='} ${next.month}mo`)
         isExpired = previous.month == next.month
         break
       case age.as('years') >= 1.0:
         // true for all but last of year
-        message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' >= 1y old`)
-        message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.year}y ${previous.year == next.year ? '=' : 'not ='} ${next.year}y`)
+        // message.push(`previous '${previous.toFormat(Configuration.format.stamp)}' >= 1y old`)
+        // message.push(`    next '${next.toFormat(Configuration.format.stamp)}' ${previous.year}y ${previous.year == next.year ? '=' : 'not ='} ${next.year}y`)
         isExpired = previous.year == next.year
         break
       default:
         isExpired = false
     }
 
-    if (isExpired) message.forEach((message) => Log.trace(message))
+    // if (isExpired) message.forEach((message) => Log.trace(message))
+    if (isExpired) Log.trace(`Archive.isExpired('${current.toFormat(Configuration.format.stamp)}', '${previous.toFormat(Configuration.format.stamp)}', '${next.toFormat(Configuration.format.stamp)}')`)
 
     return isExpired
       

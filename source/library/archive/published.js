@@ -4,6 +4,7 @@ import { SNS } from 'aws-sdk'
 
 import Archive from '../archive'
 import Configuration from '../../configuration'
+import Is from '../utility/is'
 
 const archivePrototype = Archive.getArchivePrototype()
 const publishedPrototype = Object.create(archivePrototype)
@@ -36,8 +37,7 @@ publishedPrototype.onScheduled = async function () {
       'Message': message
     }, Configuration.option.SNS.message)
   
-    
-    Log.trace(option, 'SNS.publish(option) ...')
+    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
     Log.trace(data, 'SNS.publish(option)')
 
@@ -56,7 +56,7 @@ publishedPrototype.onUnscheduled = async function () {
       'Message': 'No message'
     }, Configuration.option.SNS.message)
   
-    Log.trace(option, 'SNS.publish(option) ...')
+    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
     Log.trace(data, 'SNS.publish(option)')
 
@@ -79,7 +79,7 @@ publishedPrototype.onSucceeded = async function (result) {
     message += `Scanned: ${result.statistic.countOfScanned}\n`
     message += `Created: ${result.statistic.countOfCreated}\n`
     message += `Updated: ${result.statistic.countOfUpdated}\n`
-    if (result.statistic.countOfDeleted) message += `Deleted: ${result.statistic.countOfDeleted}\n`
+    if (Is.not.undefined(result.statistic.countOfDeleted)) message += `Deleted: ${result.statistic.countOfDeleted}\n`
     message += `Purged: ${result.statistic.countOfPurged}`
 
     let option = Configuration.getOption({
@@ -87,7 +87,7 @@ publishedPrototype.onSucceeded = async function (result) {
       'Message': message
     }, Configuration.option.SNS.message)
   
-    Log.trace(option, 'SNS.publish(option) ...')
+    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
     Log.trace(data, 'SNS.publish(option)')
 
@@ -106,7 +106,7 @@ publishedPrototype.onFailed = async function (error) {
       'Message': error.stack
     }, Configuration.option.SNS.message)
   
-    Log.trace(option, 'SNS.publish(option) ...')
+    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
     Log.trace(data, 'SNS.publish(option)')
 
@@ -121,11 +121,10 @@ const Published = Object.create(Archive)
 Published.createArchive = function (option, prototype = publishedPrototype) {
   
   let published = Archive.createArchive.call(this, option, prototype)
+  let snsOption = Configuration.getOption(Configuration.option.SNS.service)
 
-  let _option = Configuration.getOption(Configuration.option.SNS.service)
-
-  Log.trace(_option, 'SNS(option)')
-  published.service = new SNS(_option)
+  Log.trace(Configuration.redact(snsOption), 'SNS(option)')
+  published.service = new SNS(snsOption)
 
   return published
 

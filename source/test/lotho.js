@@ -20,7 +20,7 @@ before(async function () {
     Log.createFormattedLog({ 'level': Configuration.logLevel })
   }
   else {
-    await FileSystem.mkdir(Path.dirname(Configuration.logPath), { 'recursive': true })
+    await FileSystem.ensureDir(Path.dirname(Configuration.logPath))
     await FileSystem.remove(Configuration.logPath)
     Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
   }

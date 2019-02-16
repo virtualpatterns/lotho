@@ -1,8 +1,10 @@
 import { Duration, DateTime } from 'luxon'
 import Is from '@pwn/is'
 import Merge from 'deepmerge'
+import Omit from 'object.omit'
 import OS from 'os'
 import { FileSystem, Path } from '@virtualpatterns/mablung'
+import Redact from 'fast-redact'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
 const HOME_PATH = OS.homedir()
@@ -28,7 +30,8 @@ const configurationPrototype = {
           'exclude': [
             '.DS_Store',
             '*.lock',
-            '*.log'
+            '*.include',
+            '*.exclude'
           ]
         },
         'schedule': '0 0 */1 * * *'
@@ -64,6 +67,17 @@ const configurationPrototype = {
   },
   'now': () => DateTime.local(),
   'option': {
+    'omit': [
+      'Message'
+    ],
+    'redact': {
+      'paths': [
+        'credentials.accessKeyId', 
+        'credentials.secretAccessKey',
+        'privateKey' 
+      ],
+      'censor': '**********'
+    },
     'rsync': {},
     'SFTP': {},
     'SNS': {
@@ -123,7 +137,7 @@ const configurationPrototype = {
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'debug',
+    'logLevel': 'trace',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'option': {
       'lotho': { 
@@ -162,31 +176,32 @@ Configuration.clear = function () {
 
 Configuration.getParameter = function (...parameter) {
 
-  parameter = parameter.reduce((accumulator, parameter) => Merge(accumulator, parameter), {})
+  parameter = parameter.reduce((accumulator, parameter) => Merge(accumulator, this.toParameter(parameter)), {})
 
   return Object.keys(parameter)
     .filter((name) => parameter[name])
-    .map((name) => {
-
-      let value = parameter[name]
-
-      if (Is.function(value)) {
-        return [ name, value() ]
-      }
-      else if (Is.string(value)) {
-        return [ name, value ]
-      }
-      else {
-        return name
-      }
-
-    })
+    .map((name) => Is.string(parameter[name]) ? [ name, parameter[name] ] : name)
     .flat()
     
 }
 
+Configuration.toParameter = function (parameter) {
+  return Is.array(parameter) ? parameter.reduce((accumulator, parameter) => { 
+    accumulator[parameter] = true 
+    return accumulator
+  }, {}) : parameter
+}
+
 Configuration.getOption = function (...option) {
   return option.reduce((accumulator, option) => Merge(accumulator, option), {})
+}
+
+Configuration.redact = function (value) {
+  return JSON.parse(Redact(Configuration.option.redact)(value))
+}
+
+Configuration.omit = function (value) {
+  return Omit(value, Configuration.option.omit)
 }
 
 export default Configuration

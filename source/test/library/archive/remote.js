@@ -183,11 +183,72 @@ describe('remote', function () {
         })
   
         after(function () {
-          return FileSystem.remove(`${option.path.target}/${Configuration.name.content}`)
+          return FileSystem.remove(`${targetPath}/${Configuration.name.content}`)
         })
   
       })
+   
+      describe('(with a hard linked, excluded file in target)', function () {
+
+        let targetPath = null
+        let option1 = null
+        let option2 = null
   
+        let result = null
+  
+        before(async function () {
+  
+          let rootPath = 'resource/test/library/archive/excluded'
+  
+          targetPath = `${rootPath}/target`
+
+          option1 = {
+            'name': this.test.parent.title,
+            'path': {
+              'source': `${rootPath}/source`,
+              'target': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/target`
+            }
+          }
+    
+          option2 = {
+            'name': this.test.parent.title,
+            'path': {
+              'source': `${rootPath}/source`,
+              'target': `${Configuration.name.computer}.local:${__dirname}/../../../../${rootPath}/target`,
+              'exclude': 'b.txt'
+            }
+          }
+    
+          result = await Remote.createArchive(option1).archive(stamp)
+          result = await Remote.createArchive(option2).archive(stamp)
+  
+        })
+  
+        it('should delete the excluded file', async function () {
+          Assert.isFalse(await FileSystem.pathExists(`${targetPath}/${Configuration.name.content}/b.txt`))
+        })
+  
+        it('should create a record of the excluded/deleted file', async function () {
+          Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}/b.txt`))
+        })
+  
+        it('should have created 0 paths', function () {
+          Assert.equal(result.statistic.countOfCreated, 0)
+        })
+  
+        it('should have updated 0 paths', function () {
+          Assert.equal(result.statistic.countOfUpdated, 0)
+        })
+  
+        after(function () {
+          return Promise.all([
+            FileSystem.remove(`${targetPath}/${Configuration.name.content}`),
+            FileSystem.remove(`${targetPath}/${stamp.toFormat(Configuration.format.stamp)}`)
+          ])
+        })
+  
+      })
+ 
     })
   
     describe('(when purging)', function () {
@@ -256,8 +317,9 @@ describe('remote', function () {
                 next = previous.plus(toEndOfSmallUnit[0].toDuration())
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
+                await FileSystem.ensureLink(`${__dirname}/../../../../package.json`, `${targetPath}/${previousAsString}/hard-package.json`)
                 await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-                await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
+                await FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
   
                 result = await Remote.createArchive(option).archive(stamp)
                 value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
@@ -270,6 +332,10 @@ describe('remote', function () {
   
               it('should have purged 1 paths', function () {
                 Assert.equal(result.statistic.countOfPurged, 1)
+              })
+  
+              it('should copy the previous hard link', async function () {
+                Assert.isTrue(await FileSystem.pathExists(`${targetPath}/${nextAsString}/hard-package.json`))
               })
   
               it('should have the value \'abc\'', function () {
@@ -341,8 +407,8 @@ describe('remote', function () {
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
                 await Promise.all([
-                  FileSystem.mkdir(`${targetPath}/${previousAsString}`, { 'recursive': true }),
-                  FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
+                  FileSystem.ensureDir(`${targetPath}/${previousAsString}`),
+                  FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
                 ])
   
                 result = await Remote.createArchive(option).archive(stamp)
@@ -415,7 +481,7 @@ describe('remote', function () {
             nextAsString = next.toFormat(Configuration.format.stamp)
           
             await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-            await FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
+            await FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
   
             result = await Remote.createArchive(option).archive(stamp)
             value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
@@ -499,8 +565,8 @@ describe('remote', function () {
             nextAsString = next.toFormat(Configuration.format.stamp)
           
             await Promise.all([
-              FileSystem.mkdir(`${targetPath}/${previousAsString}`, { 'recursive': true }),
-              FileSystem.mkdir(`${targetPath}/${nextAsString}`, { 'recursive': true })
+              FileSystem.ensureDir(`${targetPath}/${previousAsString}`),
+              FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
             ])
   
             result = await Remote.createArchive(option).archive(stamp)

@@ -97,6 +97,57 @@ describe('local', function () {
         stamp = Configuration.now()  
       })
   
+      describe('(with a special source)', function () {
+  
+        let option = null
+        let result = null
+  
+        before(async function () {
+  
+          let rootPath = 'resource/test/library/archive/special'
+
+          option = {
+            'name': this.test.parent.title,
+            'path': {
+              'source': `${rootPath}/source`,
+              'target': `${rootPath}/target`
+            }
+          }
+    
+          result = await Local.createArchive(option).archive(stamp)
+  
+        })
+  
+        it('should create the content directory', async function () {
+          Assert.isTrue(await FileSystem.pathExists(`${option.path.target}/${Configuration.name.content}`))
+        })
+  
+        it('should not create the soft link', async function () {
+          Assert.isFalse(await FileSystem.pathExists(`${option.path.target}/${Configuration.name.content}/soft link`))
+        })
+  
+        it('should create the hard link', async function () {
+          Assert.isTrue(await FileSystem.pathExists(`${option.path.target}/${Configuration.name.content}/hard link`))
+        })
+  
+        it('should have created 2 paths', function () {
+          Assert.equal(result.statistic.countOfCreated, 2)
+        })
+  
+        it('should have updated 1 paths', function () {
+          Assert.equal(result.statistic.countOfUpdated, 1)
+        })
+  
+        it('should have deleted 0 paths', function () {
+          Assert.equal(result.statistic.countOfDeleted, 0)
+        })
+  
+        after(function () {
+          return FileSystem.remove(`${option.path.target}/${Configuration.name.content}`)
+        })
+  
+      })
+  
       describe('(with an empty source)', function () {
   
         let option = null
@@ -440,7 +491,7 @@ describe('local', function () {
   
       })
   
-      describe('(with an excluded file in target)', function () {
+      describe('(with a hard linked, excluded file in target)', function () {
   
         let option1 = null
         let option2 = null
@@ -600,8 +651,9 @@ describe('local', function () {
                 next = previous.plus(toEndOfSmallUnit[0].toDuration())
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
+                await FileSystem.ensureLink(`${__dirname}/../../../../package.json`, `${option.path.target}/${previousAsString}/hard-package.json`)
                 await FileSystem.outputJson(`${option.path.target}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-                await FileSystem.mkdir(`${option.path.target}/${nextAsString}`, { 'recursive': true })
+                await FileSystem.ensureDir(`${option.path.target}/${nextAsString}`)
   
                 result = await Local.createArchive(option).archive(stamp)
                 value = (await FileSystem.readJson(`${option.path.target}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
@@ -614,6 +666,10 @@ describe('local', function () {
   
               it('should have purged 1 paths', function () {
                 Assert.equal(result.statistic.countOfPurged, 1)
+              })
+  
+              it('should copy the previous hard link', async function () {
+                Assert.isTrue(await FileSystem.pathExists(`${option.path.target}/${nextAsString}/hard-package.json`))
               })
   
               it('should have the value \'abc\'', function () {
@@ -685,8 +741,8 @@ describe('local', function () {
                 nextAsString = next.toFormat(Configuration.format.stamp)
           
                 await Promise.all([
-                  FileSystem.mkdir(`${option.path.target}/${previousAsString}`, { 'recursive': true }),
-                  FileSystem.mkdir(`${option.path.target}/${nextAsString}`, { 'recursive': true })
+                  FileSystem.ensureDir(`${option.path.target}/${previousAsString}`),
+                  FileSystem.ensureDir(`${option.path.target}/${nextAsString}`)
                 ])
   
                 result = await Local.createArchive(option).archive(stamp)
@@ -757,7 +813,7 @@ describe('local', function () {
             nextAsString = next.toFormat(Configuration.format.stamp)
           
             await FileSystem.outputJson(`${option.path.target}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
-            await FileSystem.mkdir(`${option.path.target}/${nextAsString}`, { 'recursive': true })
+            await FileSystem.ensureDir(`${option.path.target}/${nextAsString}`)
   
             result = await Local.createArchive(option).archive(stamp)
             value = (await FileSystem.readJson(`${option.path.target}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
@@ -841,8 +897,8 @@ describe('local', function () {
             nextAsString = next.toFormat(Configuration.format.stamp)
           
             await Promise.all([
-              FileSystem.mkdir(`${option.path.target}/${previousAsString}`, { 'recursive': true }),
-              FileSystem.mkdir(`${option.path.target}/${nextAsString}`, { 'recursive': true })
+              FileSystem.ensureDir(`${option.path.target}/${previousAsString}`),
+              FileSystem.ensureDir(`${option.path.target}/${nextAsString}`)
             ])
   
             result = await Local.createArchive(option).archive(stamp)

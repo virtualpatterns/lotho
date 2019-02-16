@@ -31,7 +31,7 @@ remotePrototype.connect = async function () {
       
   this.connection = new SFTP()
 
-  Log.trace(option, 'Remote.connect(option) ...')
+  Log.trace(Configuration.redact(option), 'Remote.connect(option) ...')
   await this.connection.connect(option)
 
 }

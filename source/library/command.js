@@ -95,8 +95,7 @@ Command.onAction = async function (fn) {
       await FileSystem.access(configurationPath, FileSystem.F_OK)
     }
     catch (error) {
-      await FileSystem.mkdir(Path.dirname(configurationPath), { 'recursive': true })
-      await FileSystem.writeJson(configurationPath, Configuration.default, { 'encoding': 'utf-8', 'spaces': 2 })
+      await FileSystem.outputJson(configurationPath, Configuration.default, { 'encoding': 'utf-8', 'spaces': 2 })
     }
 
     Configuration.merge(configurationPath)
@@ -108,7 +107,7 @@ Command.onAction = async function (fn) {
       Log.createFormattedLog({ 'level': Configuration.logLevel })
     }
     else {
-      await FileSystem.mkdir(Path.dirname(Configuration.logPath), { 'recursive': true })
+      await FileSystem.ensureDir(Path.dirname(Configuration.logPath))
       Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
     }
 

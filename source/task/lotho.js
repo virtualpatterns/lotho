@@ -12,7 +12,7 @@ Jake.addListener('start', () => {
     Log.createFormattedLog({ 'level': Configuration.logLevel })
   }
   else {
-    FileSystem.mkdirSync(Path.dirname(Configuration.logPath), { 'recursive': true })
+    FileSystem.ensureDirSync(Path.dirname(Configuration.logPath))
     FileSystem.removeSync(Configuration.logPath)
     Log.createFormattedLog({ 'level': Configuration.logLevel }, Configuration.logPath)
   }
