@@ -23,15 +23,12 @@ const configurationPrototype = {
         'name': COMPUTER_NAME,
         'path': {
           'source': [ 
-            Path.join(HOME_PATH, '.lotho')
+            Path.join(HOME_PATH, '.lotho', 'configuration.json')
           ],
           'target': `BUCKBEAK.local:/Volumes/BUCKBEAK1/Backup/${COMPUTER_NAME}`,
           'include': [],
           'exclude': [
-            '.DS_Store',
-            '*.lock',
-            '*.include',
-            '*.exclude'
+            '.DS_Store'
           ]
         },
         'schedule': '0 0 */1 * * *'
@@ -42,7 +39,12 @@ const configurationPrototype = {
         'cwd': '/usr/local/bin'
       },
       'SNS': {
-        'service': {}
+        'service': {
+          'credentials': {
+            'accessKeyId': 'ABC',
+            'secretAccessKey': 'DEF'
+          }
+        }
       }
     },
     'parameter': {
@@ -88,7 +90,11 @@ const configurationPrototype = {
         'TopicArn': 'arn:aws:sns:us-east-1:118971425490:lotho'
       }
     },
-    'start': {}
+    'start': {
+      'combine_logs': true,
+      'max_restarts': 5,
+      'restart_delay': 5000
+    }
   },
   'parameter': {
     'rsync': {

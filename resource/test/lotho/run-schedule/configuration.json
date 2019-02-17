@@ -16,10 +16,5 @@
     "rsync": {
       "--relative": false
     }
-  },
-  "range": {
-    "progressInSeconds":  {
-      "minimum": 0.0
-    }
   }
 }

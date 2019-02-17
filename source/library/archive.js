@@ -14,63 +14,90 @@ import { ArchiveClassNotFoundError, ArchiveArchiveError } from './error/archive-
 
 const archivePrototype = Object.create(EventEmitter.prototype)
 
-archivePrototype.startSchedule = function () {
+archivePrototype.startSchedule = async function () {
 
   if (Is.null(this.job)) { 
 
     Log.debug(`Scheduling '${this.option.name}' ...`)
 
-    this.job = new Job(this.option.schedule, async () => {
+    try {
 
-      Log.debug(Configuration.line)
-      Log.debug(`Node.js ${Process.version} ${Package.name} ${Package.version}`)
-      Log.debug(Configuration.line)
-    
+      this.job = new Job(this.option.schedule, async () => {
+
+        Log.debug(Configuration.line)
+        Log.debug(`Node.js ${Process.version} ${Package.name} ${Package.version}`)
+        Log.debug(Configuration.line)
+      
+        try {
+          await this.onSchedule()
+        }
+        catch (error) {
+          Log.error(error, 'catch (error) { ... }')
+        }
+      
+      })
+  
+      Process.once('SIGINT', this.onSIGINT = () => {
+        Log.debug('Process.once(\'SIGINT\', () => { ... })')
+        this.stopSchedule()
+      })
+  
+      Process.once('SIGTERM', this.onSIGTERM = () => {
+        Log.debug('Process.once(\'SIGTERM\', () => { ... })')
+        this.stopSchedule()
+      })
+
       try {
-        await this.onSchedule()
+
+        this.job.start()
+
+        try {
+          await this.onScheduled()
+          Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+        }
+        catch (error) {
+          this.job.stop()
+          throw error
+        }
+         
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
-      }
+
+        Process.off('SIGTERM', this.onSIGTERM)
+        this.onSIGTERM = null
+        
+        Process.off('SIGINT', this.onSIGINT)
+        this.onSIGINT = null
     
-    })
+        throw error
 
-    Process.once('SIGINT', this.onSIGINT = () => {
-      Log.debug('Process.once(\'SIGINT\', () => { ... })')
-      this.stopSchedule()
-    })
-
-    Process.once('SIGTERM', this.onSIGTERM = () => {
-      Log.debug('Process.once(\'SIGTERM\', () => { ... })')
-      this.stopSchedule()
-    })
-  
-    this.job.start()
+      }
       
-    Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
-
-    return this.onScheduled()
-
+    }
+    catch (error) {
+      this.job = null
+      throw error
+    }
+  
   }
 
 }
 
-archivePrototype.stopSchedule = function () {
+archivePrototype.stopSchedule = async function () {
 
   if (Is.not.null(this.job)) { 
 
     this.job.stop()
     this.job = null
 
-    Process.off('SIGINT', this.onSIGINT)
-    this.onSIGINT = null
-
     Process.off('SIGTERM', this.onSIGTERM)
     this.onSIGTERM = null
 
-    Log.debug(`Unscheduled '${this.option.name}'`)
+    Process.off('SIGINT', this.onSIGINT)
+    this.onSIGINT = null
 
-    return this.onUnscheduled()
+    await this.onUnscheduled()
+    Log.debug(`Unscheduled '${this.option.name}'`)
 
   }
 

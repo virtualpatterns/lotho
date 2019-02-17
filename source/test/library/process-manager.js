@@ -1,5 +1,6 @@
 import { assert as Assert } from 'chai'
 import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
+import Sanitize from 'sanitize-filename'
 
 import ProcessManager from '../../library/process-manager'
 import Configuration from '../../configuration'
@@ -36,7 +37,10 @@ describe('process-manager', function () {
       await processManager.stopArchive()
       await processManager.close()
 
-      await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
+      await Promise.all([
+        FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`),
+        FileSystem.remove(`${Configuration.path.home}/${Sanitize(Configuration.archive[0].name)}.log`)
+      ])
 
       Configuration.clear()
       Configuration.merge(Configuration.test)
@@ -74,7 +78,10 @@ describe('process-manager', function () {
 
       await processManager.close()
 
-      await FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`)
+      await Promise.all([
+        FileSystem.remove(`${Configuration.archive[0].path.target}/${Configuration.name.content}`),
+        FileSystem.remove(`${Configuration.path.home}/${Sanitize(Configuration.archive[0].name)}.log`)
+      ])
 
       Configuration.clear()
       Configuration.merge(Configuration.test)

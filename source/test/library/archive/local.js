@@ -1,6 +1,6 @@
 import { assert as Assert } from 'chai'
 import { Duration, Interval } from 'luxon'
-import { FileSystem, Log } from '@virtualpatterns/mablung'
+import { FileSystem } from '@virtualpatterns/mablung'
 
 import Configuration from '../../../configuration'
 import _Local from '../../../library/archive/local'
@@ -11,7 +11,7 @@ describe('local', function () {
   const localPrototype = Object.create(_localPrototype)
 
   localPrototype.whenSucceeded = function () {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
       try {
 
@@ -23,14 +23,14 @@ describe('local', function () {
 
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
+        reject(error)
       }
 
     })
   }
 
   localPrototype.whenUnscheduled = function () {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
       try {
 
@@ -42,7 +42,7 @@ describe('local', function () {
 
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
+        reject(error)
       }
 
     })

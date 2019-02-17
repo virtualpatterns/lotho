@@ -1,5 +1,6 @@
-import { Log } from '@virtualpatterns/mablung'
+import { Log, Path } from '@virtualpatterns/mablung'
 import _ProcessManager from 'pm2'
+import Sanitize from 'sanitize-filename'
 import Utility from 'util'
 
 import Configuration from '../configuration'
@@ -18,6 +19,9 @@ processManagerPrototype.startArchive = async function () {
 
   try {
 
+    let logPath = Path.join(Configuration.path.home, `${Sanitize(this.option.name)}.log`)
+    let pidPath = Path.join(Configuration.path.home, `${Sanitize(this.option.name)}.pid`)
+
     let option = Configuration.getOption({
       'name': this.option.name,
       'script': Configuration.path.start,
@@ -26,7 +30,10 @@ processManagerPrototype.startArchive = async function () {
         '--log-level': Configuration.logLevel,
         '--log-path': 'console',
         'run-schedule': this.option.name
-      }, Configuration.parameter.start)
+      }, Configuration.parameter.start),
+      'out_file': logPath,
+      'error_file': logPath,
+      'pid_file': pidPath
     }, Configuration.option.start)
 
     Log.debug(`Starting '${option.name}' ...`)

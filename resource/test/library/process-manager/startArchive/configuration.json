@@ -11,14 +11,10 @@
       "schedule": "*/5 * * * * *"
     }
   ],
+  "isPublished": false,
   "parameter": {
     "rsync": {
       "--relative": false
-    }
-  },
-  "range": {
-    "progressInSeconds":  {
-      "minimum": 0.0
     }
   }
 }

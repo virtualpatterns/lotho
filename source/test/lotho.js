@@ -283,7 +283,7 @@ describe('lotho', function () {
 
     before(function () {
 
-      let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/start-archive`)
+      let rootPath = 'resource/test/lotho/start-archive'
 
       configurationPath = `${rootPath}/configuration.json`
 
@@ -343,9 +343,12 @@ describe('lotho', function () {
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
-          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/1.log`),
+          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
         ])
-
+  
       })
   
     })
@@ -401,7 +404,10 @@ describe('lotho', function () {
           'stop-archive': '2'
         })
 
-        await FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+        await Promise.all([
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
+        ])
 
       })
   
@@ -418,7 +424,7 @@ describe('lotho', function () {
 
     before(function () {
 
-      let rootPath = Path.normalize(`${__dirname}/../../resource/test/lotho/stop-archive`)
+      let rootPath = 'resource/test/lotho/stop-archive'
 
       configurationPath = `${rootPath}/configuration.json`
 
@@ -474,8 +480,12 @@ describe('lotho', function () {
       after(function () {
         return Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
-          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/1.log`),
+          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
         ])
+
       })
   
     })
@@ -521,7 +531,10 @@ describe('lotho', function () {
       })
 
       after(function () {
-        return FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+        return Promise.all([
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
+        ])
       })
   
     })
@@ -581,7 +594,9 @@ describe('lotho', function () {
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
-          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/1.log`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)        
         ])
 
       })
@@ -679,7 +694,10 @@ describe('lotho', function () {
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
-          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/1.log`),
+          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
         ])
 
       })
@@ -757,7 +775,10 @@ describe('lotho', function () {
 
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
-          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`)
+          FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
+          FileSystem.remove(`${Configuration.path.home}/1.log`),
+          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
+          FileSystem.remove(`${Configuration.path.home}/2.log`)
         ])
 
       })

@@ -9,7 +9,7 @@ describe('published', function () {
   const localPrototype = Object.create(_localPrototype)
 
   localPrototype.whenScheduled = function () {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
       try {
 
@@ -21,14 +21,14 @@ describe('published', function () {
 
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
+        reject(error)
       }
 
     })
   }
 
   localPrototype.whenUnscheduled = function () {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
       try {
 
@@ -40,14 +40,14 @@ describe('published', function () {
 
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
+        reject(error)
       }
 
     })
   }
 
   localPrototype.whenSucceeded = function () {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
 
       try {
 
@@ -57,7 +57,7 @@ describe('published', function () {
 
       }
       catch (error) {
-        Log.error(error, 'catch (error) { ... }')
+        reject(error)
       }
 
     })

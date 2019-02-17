@@ -37,9 +37,9 @@ publishedPrototype.onScheduled = async function () {
       'Message': message
     }, Configuration.option.SNS.message)
   
-    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
+    Log.debug(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
-    Log.trace(data, 'SNS.publish(option)')
+    Log.debug(data, 'SNS.publish(option)')
 
   }
 
@@ -56,9 +56,9 @@ publishedPrototype.onUnscheduled = async function () {
       'Message': 'No message'
     }, Configuration.option.SNS.message)
   
-    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
+    Log.debug(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
-    Log.trace(data, 'SNS.publish(option)')
+    Log.debug(data, 'SNS.publish(option)')
 
   }
 
@@ -87,9 +87,9 @@ publishedPrototype.onSucceeded = async function (result) {
       'Message': message
     }, Configuration.option.SNS.message)
   
-    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
+    Log.debug(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
-    Log.trace(data, 'SNS.publish(option)')
+    Log.debug(data, 'SNS.publish(option)')
 
   }
 
@@ -106,9 +106,9 @@ publishedPrototype.onFailed = async function (error) {
       'Message': error.stack
     }, Configuration.option.SNS.message)
   
-    Log.trace(Configuration.omit(option), 'SNS.publish(option) ...')
+    Log.debug(Configuration.omit(option), 'SNS.publish(option) ...')
     let data = await this.service.publish(option).promise()
-    Log.trace(data, 'SNS.publish(option)')
+    Log.debug(data, 'SNS.publish(option)')
 
   }
 
@@ -121,10 +121,10 @@ const Published = Object.create(Archive)
 Published.createArchive = function (option, prototype = publishedPrototype) {
   
   let published = Archive.createArchive.call(this, option, prototype)
-  let snsOption = Configuration.getOption(Configuration.option.SNS.service)
+  let _option = Configuration.getOption(Configuration.option.SNS.service)
 
-  Log.trace(Configuration.redact(snsOption), 'SNS(option)')
-  published.service = new SNS(snsOption)
+  Log.debug(Configuration.redact(_option), 'SNS(option)')
+  published.service = new SNS(_option)
 
   return published
 
