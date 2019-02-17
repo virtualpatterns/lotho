@@ -19,7 +19,7 @@
     "url": "https://github.com/virtualpatterns/lotho"
   },
   "scripts": {
-    "upgrade": "npm-check-updates --upgrade",
+    "upgrade": "npm-check-updates --upgradeAll",
     "refresh": "rm -Rf node_modules distributable/* && npm install",
     "clean": "rm -Rf distributable/configuration.js distributable/configuration.js.map distributable/task",
     "lint": "npm run clean && eslint --ignore-path .gitignore source/configuration.js source/task",
@@ -29,32 +29,33 @@
     "jake": "npm run build-jake && jake",
     "build-all": "npm run build-jake && jake build"
   },
-  "version": "0.0.20",
+  "version": "0.0.21",
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/core": "^7.1.2",
-    "@babel/preset-env": "^7.1.0",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.3",
+    "@babel/preset-env": "^7.3.1",
     "chai": "^4.2.0",
-    "eslint": "^5.6.1",
-    "jake": "^8.0.15",
+    "eslint": "^5.14.0",
+    "jake": "^8.0.19",
     "mocha": "^5.2.0",
-    "npm-check-updates": "^2.14.1"
+    "npm-check-updates": "^2.15.0"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0",
+    "@babel/polyfill": "^7.2.5",
     "@pwn/is": "^1.0.2",
     "@virtualpatterns/mablung": "0.0.26",
-    "aws-sdk": "^2.400.0",
+    "aws-sdk": "^2.404.0",
     "commander": "^2.19.0",
     "cron": "^1.6.0",
     "cronstrue": "^1.61.0",
-    "deepmerge": "^3.0.0",
+    "deepmerge": "^3.2.0",
     "fast-redact": "^1.4.3",
-    "luxon": "^1.4.5",
+    "luxon": "^1.11.2",
     "object-path": "^0.11.4",
     "object.omit": "^3.0.0",
-    "pm2": "^3.2.4",
-    "source-map-support": "^0.5.9",
+    "pm2": "^3.2.9",
+    "sanitize-filename": "^1.6.1",
+    "source-map-support": "^0.5.10",
     "ssh2-sftp-client": "^2.4.3",
     "uuid": "^3.3.2"
   }
