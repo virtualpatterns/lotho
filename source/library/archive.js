@@ -50,15 +50,9 @@ archivePrototype.startSchedule = async function () {
       try {
 
         this.job.start()
+        this.onScheduled()
 
-        try {
-          await this.onScheduled()
-          Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
-        }
-        catch (error) {
-          this.job.stop()
-          throw error
-        }
+        Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
          
       }
       catch (error) {
@@ -96,7 +90,8 @@ archivePrototype.stopSchedule = async function () {
     Process.off('SIGINT', this.onSIGINT)
     this.onSIGINT = null
 
-    await this.onUnscheduled()
+    this.onUnscheduled()
+
     Log.debug(`Unscheduled '${this.option.name}'`)
 
   }
@@ -118,25 +113,26 @@ archivePrototype.onSchedule = async function () {
 
     let stamp = Configuration.now()
 
-    await this.onStarted(stamp)
+    this.onStarted(stamp)
 
     try {
 
       try {
 
         let result = await this.archive(stamp)
-        await this.onSucceeded(result)
+
+        this.onSucceeded(result)
     
         return result
   
       }
       catch (error) {
-        await this.onFailed(error)
+        this.onFailed(error)
       }
   
     }
     finally {
-      await this.onFinished()
+      this.onFinished()
     }
 
   }

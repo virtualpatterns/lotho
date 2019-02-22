@@ -50,6 +50,10 @@ Status.createRoute = function (server, archive) {
         lastError = '(not failed)'
       }
 
+      let nextSchedule = null
+      nextSchedule = archive.getNextSchedule()
+      nextSchedule = Is.not.null(nextSchedule) ? nextSchedule.toFormat(Configuration.format.stamp) : '(unknown)'
+
       let status = {
         'address': {
           'remote': request.socket.remoteAddress,
@@ -64,13 +68,15 @@ Status.createRoute = function (server, archive) {
         'lastError': lastError,
         'lastResult': lastResult,
         'name': archive.option.name,
+        'nextSchedule': nextSchedule,
         'now': Configuration.now().toFormat(Configuration.format.stamp),
         'package': {
           'name': Package.name,
           'version': Package.version
         },
         'path': archive.option.path,
-        'schedule': Schedule.toString(archive.option.schedule, true)
+        'schedule': Schedule.toString(archive.option.schedule, true),
+        'version': Process.version
       }
 
       response.noCache()

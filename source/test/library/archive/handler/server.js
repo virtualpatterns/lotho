@@ -77,6 +77,7 @@ const STATUS_SCHEMA = {
       ]
     },
     'name': { 'type': 'string' },
+    'nextSchedule': { 'type': 'string' },
     'now': { 'type': 'string' },
     'package': {
       'name': 'Status-Package',
@@ -113,9 +114,10 @@ const STATUS_SCHEMA = {
       'required': [ 'home', 'source', 'target', 'include', 'exclude' ],
       'additionalProperties': false
     },
-    'schedule': { 'type': 'string' }
+    'schedule': { 'type': 'string' },
+    'version':  { 'type': 'string' }
   },
-  'required': [ 'address', 'agent', 'currentStamp', 'heap', 'lastError', 'lastResult', 'name', 'now', 'package', 'path', 'schedule' ],
+  'required': [ 'address', 'agent', 'currentStamp', 'heap', 'lastError', 'lastResult', 'name', 'nextSchedule', 'now', 'package', 'path', 'schedule', 'version' ],
   'additionalProperties': false
 }
 

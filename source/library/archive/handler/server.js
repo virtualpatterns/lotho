@@ -93,6 +93,7 @@ serverPrototype.onUnscheduled = async function () {
       })
 
       this.server.close(() => {
+        Log.debug(`Closed http://${this.archive.option.server.address}:${this.archive.option.server.port}`)
 
         this.server.off('error', this.onUnscheduledError)
         resolve()
