@@ -1,15 +1,15 @@
 import { Log } from '@virtualpatterns/mablung'
 import Merge from 'deepmerge'
 
-import Published from './published'
+import Archive from '../archive'
 import Configuration from '../../configuration'
 
-const publishedPrototype = Published.getArchivePrototype()
-const purgedPrototype = Object.create(publishedPrototype)
+const archivePrototype = Archive.getArchivePrototype()
+const purgedPrototype = Object.create(archivePrototype)
 
 purgedPrototype.archive = async function (stamp = Configuration.now()) {
      
-  let _result = await publishedPrototype.archive.call(this, stamp)
+  let _result = await archivePrototype.archive.call(this, stamp)
     
   Log.debug(`Purging '${this.option.name}' ...`)
 
@@ -28,10 +28,10 @@ purgedPrototype.archive = async function (stamp = Configuration.now()) {
 
 }
 
-const Purged = Object.create(Published)
+const Purged = Object.create(Archive)
 
 Purged.createArchive = function (option, prototype = purgedPrototype) {
-  return Published.createArchive.call(this, option, prototype)
+  return Archive.createArchive.call(this, option, prototype)
 }
 
 Purged.getArchivePrototype = function () {

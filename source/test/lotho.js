@@ -1,20 +1,23 @@
 import '@babel/polyfill'
-import { assert as Assert } from 'chai'
+import Chai, { assert as Assert } from 'chai'
+import ChaiJSONSchema from 'chai-json-schema'
 import ChildProcess from 'child_process'
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
+import Request from 'axios'
 import Source from 'source-map-support'
 
 import Configuration from '../configuration'
 import Package from '../../package.json'
 import ProcessManager from '../library/process-manager'
 
-import { FileExistsError } from './error/test-error'
+import { FileExistsError, RequestSucceededError } from './error/test-error'
 
 Source.install({ 'handleUncaughtExceptions': false })
 
 before(async function () {
 
   Configuration.merge(Configuration.test)
+  Chai.use(ChaiJSONSchema)
 
   if (Configuration.logPath == 'console') {
     Log.createFormattedLog({ 'level': Configuration.logLevel })
@@ -76,6 +79,12 @@ describe('lotho', function () {
   
     })
   
+  }
+
+  Lotho.whenElapsed = function (millisecond) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, millisecond)
+    })
   }
   
   let processManager = null
@@ -247,7 +256,9 @@ describe('lotho', function () {
     let targetPath = null
     let lotho = null
 
-    before(async function () {
+    let request = null
+
+    before(function () {
 
       let rootPath = 'resource/test/lotho/run-schedule'
       let configurationPath = `${rootPath}/configuration.json`
@@ -261,12 +272,20 @@ describe('lotho', function () {
         'run-schedule': Package.name
       })
 
+      request = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
+
+      return Lotho.whenElapsed(5000)
+
     })
 
     it('should create the content directory', function () {
       return FileSystem.whenFileExists(1000, 20000, `${targetPath}/${Configuration.name.content}`)
     })
-    
+
+    it('should respond with 200 OK', async function () {
+      Assert.equal((await request.head('/api/status')).status, 200)
+    })
+
     after(async function () {
       await lotho.stop(process)
       await FileSystem.remove(`${targetPath}/${Configuration.name.content}`)
@@ -298,6 +317,10 @@ describe('lotho', function () {
       let pid1 = null
       let pid2 = null
 
+      let request1 = null
+      let request15 = null
+      let request2 = null
+
       before(async function () {
         
         code = await Lotho.run({
@@ -307,8 +330,14 @@ describe('lotho', function () {
           'start-archive': true
         })
 
+        await Lotho.whenElapsed(5000)
+
         pid1 = await processManager.getArchivePID('1')
         pid2 = await processManager.getArchivePID('2')
+
+        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
+        request15 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4568' }, Configuration.test.option.request))
+        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4569' }, Configuration.test.option.request))
 
       })
   
@@ -323,7 +352,15 @@ describe('lotho', function () {
       it('should create the content directory', function () {
         return FileSystem.whenFileExists(1000, 20000, `${targetPath1}/${Configuration.name.content}`)
       })
- 
+
+      it('should respond with 200 OK', async function () {
+        Assert.equal((await request1.head('/api/status')).status, 200)
+      })
+
+      it('should respond with 200 OK', async function () {
+        Assert.equal((await request15.head('/api/status')).status, 200)
+      })
+  
       it('should be a valid pid', function () {
         Process.kill(pid2, 0)
       })
@@ -331,7 +368,11 @@ describe('lotho', function () {
       it('should create the content directory', function () {
         return FileSystem.whenFileExists(1000, 20000, `${targetPath2}/${Configuration.name.content}`)
       })
-      
+
+      it('should respond with 200 OK', async function () {
+        Assert.equal((await request2.head('/api/status')).status, 200)
+      })
+  
       after(async function () {
 
         await Lotho.run({
@@ -344,9 +385,9 @@ describe('lotho', function () {
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/1.log`),
-          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.5.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
   
       })
@@ -355,9 +396,12 @@ describe('lotho', function () {
 
     describe('(when called with a name)', function () {
 
+      let code = null
       let pid1 = null
       let pid2 = null
-      let code = null
+
+      let request1 = null
+      let request2 = null
 
       before(async function () {
 
@@ -368,8 +412,13 @@ describe('lotho', function () {
           'start-archive': '2'
         })
 
+        await Lotho.whenElapsed(5000)
+
         pid1 = await processManager.getArchivePID('1')
         pid2 = await processManager.getArchivePID('2')
+
+        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
+        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4569' }, Configuration.test.option.request))
 
       })
   
@@ -386,7 +435,21 @@ describe('lotho', function () {
           complete(FileSystem.pathExistsSync(`${targetPath1}/${Configuration.name.content}`) ? new FileExistsError(`${targetPath1}/${Configuration.name.content}`) : undefined)
         }, 9000)
       })
- 
+  
+      it('should fail', async function () {
+
+        try {
+          await request1.head('/api/status')
+          throw new RequestSucceededError('/api/status')
+        }
+        catch (error) {
+          if (error instanceof RequestSucceededError) {
+            throw error
+          }
+        }
+
+      })
+
       it('should be a valid pid', function () {
         Process.kill(pid2, 0)
       })
@@ -394,7 +457,11 @@ describe('lotho', function () {
       it('should create the content directory', function () {
         return FileSystem.whenFileExists(1000, 20000, `${targetPath2}/${Configuration.name.content}`)
       })
-      
+
+      it('should respond with 200 OK', async function () {
+        Assert.equal((await request2.head('/api/status')).status, 200)
+      })
+
       after(async function () {
 
         await Lotho.run({
@@ -406,7 +473,7 @@ describe('lotho', function () {
 
         await Promise.all([
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
 
       })
@@ -481,9 +548,9 @@ describe('lotho', function () {
         return Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/1.log`),
-          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.5.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
 
       })
@@ -533,7 +600,7 @@ describe('lotho', function () {
       after(function () {
         return Promise.all([
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
       })
   
@@ -595,8 +662,8 @@ describe('lotho', function () {
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/1.log`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)        
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)        
         ])
 
       })
@@ -695,9 +762,9 @@ describe('lotho', function () {
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/1.log`),
-          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.5.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
 
       })
@@ -776,9 +843,9 @@ describe('lotho', function () {
         await Promise.all([
           FileSystem.remove(`${targetPath1}/${Configuration.name.content}`),
           FileSystem.remove(`${targetPath2}/${Configuration.name.content}`),
-          FileSystem.remove(`${Configuration.path.home}/1.log`),
-          FileSystem.remove(`${Configuration.path.home}/1.5.log`),
-          FileSystem.remove(`${Configuration.path.home}/2.log`)
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/1.5.log`),
+          FileSystem.remove(`${Path.dirname(configurationPath)}/2.log`)
         ])
 
       })
@@ -793,8 +860,9 @@ describe('lotho', function () {
 
 })
 
+require('./library/archive/handler/publisher')
+require('./library/archive/handler/server')
 require('./library/archive/local')
-require('./library/archive/published')
 require('./library/archive/remote')
 require('./library/archive')
 require('./library/utility/is')

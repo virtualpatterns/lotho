@@ -26,4 +26,17 @@ FileExistsError.prototype = Object.create(TestError.prototype)
 FileExistsError.prototype.constructor = FileExistsError
 FileExistsError.prototype.name = FileExistsError.name
 
-export { TestError, FileExistsError }
+function RequestSucceededError(path) {
+
+  Error.call(this)
+  Error.captureStackTrace(this, FileExistsError)
+
+  this.message = `The request '${path}' succeeded.`
+
+}
+
+RequestSucceededError.prototype = Object.create(TestError.prototype)
+RequestSucceededError.prototype.constructor = RequestSucceededError
+RequestSucceededError.prototype.name = RequestSucceededError.name
+
+export { TestError, FileExistsError, RequestSucceededError }

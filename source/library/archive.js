@@ -110,24 +110,43 @@ archivePrototype.getNextSchedule = function () {
 archivePrototype.onSchedule = async function () {
 
   let lockPath = Path.join(Configuration.path.home, `archive.${this.id}.lock`)
+
+  Log.trace(`FileSystem.outputFile('${Path.basename(lockPath)}', '', { 'encoding': 'utf-8', 'flag': 'wx' })`)
   await FileSystem.outputFile(lockPath, '', { 'encoding': 'utf-8', 'flag': 'wx' })
 
   try {
 
-    let result = await this.archive()
+    let stamp = Configuration.now()
 
-    await this.onSucceeded(result)
+    await this.onStarted(stamp)
 
-    return result
+    try {
 
-  }
-  catch (error) {
-    await this.onFailed(error)
-    throw error
+      try {
+
+        let result = await this.archive(stamp)
+        await this.onSucceeded(result)
+    
+        return result
+  
+      }
+      catch (error) {
+        await this.onFailed(error)
+      }
+  
+    }
+    finally {
+      await this.onFinished()
+    }
+
   }
   finally {
+
     if (Is.not.null(this.getNextSchedule())) Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+
+    Log.trace(`FileSystem.remove('${Path.basename(lockPath)}')`)
     await FileSystem.remove(lockPath)
+
   }
 
 }
@@ -163,14 +182,16 @@ archivePrototype.archive = async function (stamp = Configuration.now()) {
 
 }
 
-archivePrototype._archive = function (stamp, includePath, excludePath) {
+archivePrototype._archive = function (stamp) {
 
   return new Promise((resolve, reject) => {
 
     try {
 
       let backupPath = `..${Archive.getSeparator(this.option.path.target)}${stamp.toFormat(Configuration.format.stamp)}`
-
+      let includePath = `${this.option.path.home}${Archive.getSeparator(this.option.path.home)}archive.${this.id}.include`
+      let excludePath = `${this.option.path.home}${Archive.getSeparator(this.option.path.home)}archive.${this.id}.exclude`
+    
       let parameter = Configuration.getParameter(
         { 
           '--backup': true, 
@@ -321,8 +342,8 @@ archivePrototype.onScheduled = function () {
   this.emit('scheduled')
 }
 
-archivePrototype.onUnscheduled = function () {
-  this.emit('unscheduled')
+archivePrototype.onStarted = function (stamp) {
+  this.emit('started', stamp)
 }
 
 archivePrototype.onSucceeded = function (result) {
@@ -333,12 +354,21 @@ archivePrototype.onFailed = function (error) {
   this.emit('failed', error)
 }
 
+archivePrototype.onFinished = function () {
+  this.emit('finished')
+}
+
+archivePrototype.onUnscheduled = function () {
+  this.emit('unscheduled')
+}
+
 const Archive = Object.create({})
 
 Archive.archiveClass = []
 
 Archive.createArchive = function (option, prototype = archivePrototype) {
 
+  option.path.home = Property.get(option.path, 'home', Configuration.path.home)
   option.path.source = Is.array(option.path.source) ? option.path.source : [ option.path.source ]
   option.path.include = Is.array(option.path.include = Property.get(option.path, 'include', []) ) ? option.path.include : [ option.path.include ]
   option.path.exclude = Is.array(option.path.exclude = Property.get(option.path, 'exclude', []) ) ? option.path.exclude : [ option.path.exclude ]
@@ -403,7 +433,14 @@ Archive.getPath = function (path, addToPath = '') {
 
   if (Is.not.null(match = Configuration.pattern.remotePath.exec(path))) {
     let [ , computerName, path ] = match
-    return `${computerName}:"${path}${Archive.getSeparator(path)}${addToPath}"`
+
+    if (Configuration.pattern.whitespace.test(path)) {
+      return `${computerName}:"${path}${Archive.getSeparator(path)}${addToPath}"`
+    }
+    else {
+      return `${computerName}:${path}${Archive.getSeparator(path)}${addToPath}`
+    }
+
   }
   else {
     return `${path}${Archive.getSeparator(path)}${addToPath}`

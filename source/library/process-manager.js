@@ -19,8 +19,8 @@ processManagerPrototype.startArchive = async function () {
 
   try {
 
-    let logPath = Path.join(Configuration.path.home, `${Sanitize(this.option.name)}.log`)
-    let pidPath = Path.join(Configuration.path.home, `${Sanitize(this.option.name)}.pid`)
+    let logPath = Path.join(Path.dirname(Configuration.path.configuration), `${Sanitize(this.option.name)}.log`)
+    let pidPath = Path.join(Path.dirname(Configuration.path.configuration), `${Sanitize(this.option.name)}.pid`)
 
     let option = Configuration.getOption({
       'name': this.option.name,

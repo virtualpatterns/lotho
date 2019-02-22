@@ -24,7 +24,9 @@
       "program": "${workspaceFolder}/distributable/lotho.js",
       "preLaunchTask": "Build",
       "args": [
-        "start-archive", "0"
+        "--configuration-path", "${workspaceFolder}/resource/test/lotho/run-schedule/configuration.json",
+        "--log-level", "trace",
+        "run-schedule", "@virtualpatterns/lotho"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "openOnSessionStart"

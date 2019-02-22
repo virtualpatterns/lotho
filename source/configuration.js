@@ -8,6 +8,7 @@ import Redact from 'fast-redact'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
 const HOME_PATH = OS.homedir()
+const PORT = 4567
 
 const MILLISECOND_PER_SECOND = 1000
 const NANOSECOND_PER_SECOND = 1000000000
@@ -22,6 +23,7 @@ const configurationPrototype = {
       {
         'name': COMPUTER_NAME,
         'path': {
+          'home': Path.join(HOME_PATH, '.lotho'),
           'source': [ 
             Path.join(HOME_PATH, '.lotho', 'configuration.json')
           ],
@@ -31,7 +33,11 @@ const configurationPrototype = {
             '.DS_Store'
           ]
         },
-        'schedule': '0 0 */1 * * *'
+        'schedule': '0 0 */1 * * *',
+        'server': {
+          'address': '0.0.0.0',
+          'port': PORT
+        }
       }
     ],
     'option': {
@@ -56,6 +62,10 @@ const configurationPrototype = {
     }
   },
   'format': {
+    'byte': {
+      'scale': 'binary',
+      'unit': 'B'
+    },
     'schedule': '\'for\' DDDD \'at\' tt',
     'stamp': 'yyyy.LL.dd-HH.mm.ss.SSSZZZ'
   },
@@ -69,6 +79,12 @@ const configurationPrototype = {
   },
   'now': () => DateTime.local(),
   'option': {
+    'CORS': {
+      'preflightMaxAge': 5,
+      'origins': [ '*' ],
+      'allowHeaders': [ 'X-Forwarded-For' ],
+      'exposeHeaders': [ '' ]
+    },
     'omit': [
       'Message'
     ],
@@ -108,7 +124,7 @@ const configurationPrototype = {
       '--perms': true,
       '--recursive': true,
       '--relative': true,
-      '--rsh=ssh': true,
+      '--rsh': 'ssh',
       '--stats': true,
       '--times': true,
       '--whole-file': true
@@ -123,6 +139,7 @@ const configurationPrototype = {
     'start': Path.normalize(Path.join(__dirname, 'lotho.js'))
   },
   'pattern': {
+    'whitespace': /\s/,
     'backwardSlash': /\\/g,
     'forwardSlash': /\//g,
     'change': /^([<>ch\\.\\*]\S+)\s+(.*)$/,
@@ -138,6 +155,45 @@ const configurationPrototype = {
       'maximum': Infinity
     }
   },
+  // 'schema': {
+  //   'archive': {
+  //     'title': 'Archive',
+  //     'type': 'object',
+  //     'properties': {
+  //       'name': { 'type': 'string' },
+  //       'path': {
+  //         'name': 'Archive-Path',
+  //         'type': 'object',
+  //         'properties': {
+  //           'home': { 'type': 'string' },
+  //           'source': {
+  //             'type': 'array',
+  //             'items': { 'type': 'string' },
+  //             'uniqueItems': false
+  //           },
+  //           'target':  { 'type': 'string' },
+  //           'include':  {
+  //             'type': 'array',
+  //             'items': { 'type': 'string' },
+  //             'uniqueItems': false
+  //           },
+  //           'exclude':  {
+  //             'type': 'array',
+  //             'items': { 'type': 'string' },
+  //             'uniqueItems': false
+  //           }
+  //         },
+  //         'required': [ 'home', 'source', 'target', 'include', 'exclude' ],
+  //         'additionalProperties': false
+  //       },
+  //       'schedule': { 'type': 'string' }
+  //     }
+  //   }  
+  // },
+  'server': {
+    'address': '0.0.0.0',
+    'port': PORT
+  },
   'task': {
     'logLevel': 'debug',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
@@ -148,7 +204,8 @@ const configurationPrototype = {
     'option': {
       'lotho': { 
         'silent': true 
-      }
+      },
+      'request': {}
     },
     'parameter': {
       'lotho': {}

@@ -1,10 +1,13 @@
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
 import _Command from 'commander'
+import Property from 'object-path'
 
 import Archive from './archive'
 import Configuration from '../configuration'
 import Package from '../../package.json'
 import ProcessManager from './process-manager'
+import Publisher from './archive/handler/publisher'
+import Server from './archive/handler/server'
 
 import { CommandInvalidError } from './error/command-error'
 
@@ -26,19 +29,28 @@ Command
 Command
   .command('run-archive [name]')
   .description('Process the archive(s) according to the configuration')
-  .action((name) => Command.onArchive(name, (archive) => Archive.selectArchive(archive).archive()))
+  .action((name) => Command.onOption(name, (option) => Archive.selectArchive(option).archive()))
 
 Command
   .command('run-schedule <name>')
   .description('Schedule the archive according to the configuration')
-  .action((name) => Command.onArchive(name, (archive) => Archive.selectArchive(archive).startSchedule()))
+  .action((name) => Command.onOption(name, (option) => {
+    
+    let archive = Archive.selectArchive(option)
+    
+    Server.createHandler(archive)
+    Publisher.createHandler(archive)
+ 
+    archive.startSchedule()
+  
+  }))
 
 Command
   .command('start-archive [name]')
   .description('Start both the process manager and the schedule(s)')
-  .action((name) => Command.onArchive(name, async (archive) => {
+  .action((name) => Command.onOption(name, async (option) => {
 
-    let processManager = await ProcessManager.openProcessManager(archive)
+    let processManager = await ProcessManager.openProcessManager(option)
 
     try {
       await processManager.startArchive()
@@ -52,9 +64,9 @@ Command
 Command
   .command('stop-archive [name]')
   .description('Stop and delete the schedule(s) (the process manager remains running)')
-  .action((name) => Command.onArchive(name, async (archive) => {
+  .action((name) => Command.onOption(name, async (option) => {
 
-    let processManager = await ProcessManager.openProcessManager(archive)
+    let processManager = await ProcessManager.openProcessManager(option)
 
     try {
       await processManager.stopArchive()
@@ -68,9 +80,9 @@ Command
 Command
   .command('restart-archive [name]')
   .description('Stop and re-start the schedule(s)')
-  .action((name) => Command.onArchive(name, async (archive) => {
+  .action((name) => Command.onOption(name, async (option) => {
 
-    let processManager = await ProcessManager.openProcessManager(archive)
+    let processManager = await ProcessManager.openProcessManager(option)
 
     try {
       await processManager.restartArchive()
@@ -89,7 +101,7 @@ Command.onAction = async function (fn) {
     
   try {
 
-    let configurationPath = Command.configurationPath || Configuration.path.configuration
+    let configurationPath = Property.get(Command, 'configurationPath', Configuration.path.configuration)
 
     try {
       await FileSystem.access(configurationPath, FileSystem.F_OK)
@@ -100,8 +112,8 @@ Command.onAction = async function (fn) {
 
     Configuration.merge(configurationPath)
 
-    Configuration.logPath = Command.logPath || Configuration.logPath
-    Configuration.logLevel = Command.logLevel || Configuration.logLevel
+    Configuration.logPath = Property.get(Command, 'logPath', Configuration.logPath)
+    Configuration.logLevel = Property.get(Command, 'logLevel', Configuration.logLevel)
 
     if (Configuration.logPath == 'console') {
       Log.createFormattedLog({ 'level': Configuration.logLevel })
@@ -154,20 +166,20 @@ Command.onAction = async function (fn) {
 
 }
 
-Command.onArchive = function (name, fn) {
+Command.onOption = function (name, fn) {
 
   return Command.onAction(async () => {
 
-    let archive = Configuration.archive.filter((archive) => name ? archive.name == name : true)
+    let option = Configuration.archive.filter((option) => name ? option.name == name : true)
 
-    for (let _archive of archive) {
+    for (let _option of option) {
 
       try {
-        await fn(_archive)
+        await fn(_option)
       }
       catch (error) {
 
-        if (archive.length == 1) {
+        if (option.length == 1) {
           throw error
         } else {
           Log.error(error, 'catch (error) { ... }')
