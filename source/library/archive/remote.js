@@ -7,7 +7,7 @@ import Configuration from '../../configuration'
 import Is from '../utility/is'
 import Purged from './purged'
 
-import { RemoteCopyError } from '../error/remote-error'
+import { RemoteCopyError, RemoteDeleteError } from '../error/remote-error'
 
 const purgePrototype = Purged.getArchivePrototype()
 const remotePrototype = Object.create(purgePrototype)
@@ -63,13 +63,14 @@ remotePrototype.copyExpired = function (previous, next) {
     let match = pattern.exec(this.option.path.target)
     
     let [ , , targetPath ] = match
-    let previousPath = Path.join(targetPath, previous.toFormat(Configuration.format.stamp))
-    let nextPath = Path.join(targetPath, next.toFormat(Configuration.format.stamp))
+    let separator = Remote.getSeparator(targetPath)
+    let previousPath = `${targetPath}${separator}${previous.toFormat(Configuration.format.stamp)}`
+    let nextPath = `${targetPath}${separator}${next.toFormat(Configuration.format.stamp)}`
   
     Log.debug(`Copying to '${Path.basename(nextPath)}' ...`)
 
-    Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}/" "${nextPath}"', (error, stream) => { ... })`)
-    this.connection.client.exec(`cp -Rnpv "${previousPath}/" "${nextPath}"`, (error, stream) => {
+    Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}${separator}" "${nextPath}"', (error, stream) => { ... })`)
+    this.connection.client.exec(`cp -Rnpv "${previousPath}${separator}" "${nextPath}"`, (error, stream) => {
 
       if (error) {
         Log.error(error, `SFTP.exec('cp -Rnpv "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
@@ -110,16 +111,71 @@ remotePrototype.copyExpired = function (previous, next) {
 
 }
 
+// remotePrototype.deleteExpired = function (previous) {
+
+//   let pattern = Configuration.pattern.remotePath
+//   let match = pattern.exec(this.option.path.target)
+  
+//   let [ , , targetPath ] = match
+//   let previousPath = Path.join(targetPath, previous.toFormat(Configuration.format.stamp))
+
+//   Log.debug(`Deleting '${Path.basename(previousPath)}' ...`)
+//   return this.connection.rmdir(previousPath, true)
+
+// }
+
 remotePrototype.deleteExpired = function (previous) {
 
-  let pattern = Configuration.pattern.remotePath
-  let match = pattern.exec(this.option.path.target)
-  
-  let [ , , targetPath ] = match
-  let previousPath = Path.join(targetPath, previous.toFormat(Configuration.format.stamp))
+  return new Promise((resolve, reject) => {
 
-  Log.debug(`Deleting '${Path.basename(previousPath)}' ...`)
-  return this.connection.rmdir(previousPath, true)
+    let pattern = Configuration.pattern.remotePath
+    let match = pattern.exec(this.option.path.target)
+    
+    let [ , , targetPath ] = match
+    let separator = Remote.getSeparator(targetPath)
+    let previousPath = `${targetPath}${separator}${previous.toFormat(Configuration.format.stamp)}`
+  
+    Log.debug(`Deleting '${Path.basename(previousPath)}' ...`)
+
+    Log.trace(`SFTP.exec('rm -Rv "${previousPath}"', (error, stream) => { ... })`)
+    this.connection.client.exec(`rm -Rv "${previousPath}"`, (error, stream) => {
+
+      if (error) {
+        Log.error(error, `SFTP.exec('rm -Rv "${previousPath}"', (error, stream) => { ... })`)
+        reject(new RemoteDeleteError(previousPath, error))
+      }
+      else {
+
+        let stdout = ''
+        let stderr = ''
+  
+        stream.stdout.on('data', (data) => {
+          stdout += data
+        })
+        
+        stream.stderr.on('data', (data) => {
+          stderr += data
+        })
+
+        stream.once('close', (code) => {
+
+          if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
+
+          if ([ 0 ].includes(code)) {
+            resolve()
+          }
+          else {
+            if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
+            reject(new RemoteDeleteError(previousPath, stderr))
+          }
+
+        })
+
+      }
+
+    })
+
+  })
 
 }
 
