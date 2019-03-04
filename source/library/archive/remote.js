@@ -7,7 +7,7 @@ import Configuration from '../../configuration'
 import Is from '../utility/is'
 import Purged from './purged'
 
-import { RemoteCopyError, RemoteDeleteError } from '../error/remote-error'
+import { RemoteConnectError, RemoteCopyError, RemoteDeleteError } from '../error/remote-error'
 
 const purgePrototype = Purged.getArchivePrototype()
 const remotePrototype = Object.create(purgePrototype)
@@ -31,8 +31,13 @@ remotePrototype.connect = async function () {
       
   this.connection = new SFTP()
 
-  Log.trace(Configuration.redact(option), 'Remote.connect(option) ...')
-  await this.connection.connect(option)
+  try {
+    Log.trace(Configuration.redact(option), 'Remote.connect(option) ...')
+    await this.connection.connect(option)
+  }
+  catch (error) {
+    throw new RemoteConnectError(error)
+  }
 
 }
 

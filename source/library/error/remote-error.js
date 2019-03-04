@@ -15,6 +15,27 @@ RemoteError.prototype = Object.create(Error.prototype)
 RemoteError.prototype.constructor = RemoteError
 RemoteError.prototype.name = RemoteError.name
 
+function RemoteConnectError(value) {
+
+  Error.call(this)
+  Error.captureStackTrace(this, RemoteConnectError)
+
+  if (Is.error(value)) {
+    this.message = `Unable to connect to the remote server (${value.message})`
+  }
+  else if (Is.string(value)) {
+    this.message = `Unable to connect to the remote server\n\n${value}`
+  }
+  else {
+    this.message = 'Unable to connect to the remote server'
+  }
+
+}
+
+RemoteConnectError.prototype = Object.create(RemoteError.prototype)
+RemoteConnectError.prototype.constructor = RemoteConnectError
+RemoteConnectError.prototype.name = RemoteConnectError.name
+
 function RemoteCopyError(value) {
 
   Error.call(this)
@@ -57,4 +78,4 @@ RemoteDeleteError.prototype = Object.create(RemoteError.prototype)
 RemoteDeleteError.prototype.constructor = RemoteDeleteError
 RemoteDeleteError.prototype.name = RemoteDeleteError.name
 
-export { RemoteError, RemoteCopyError }
+export { RemoteError, RemoteConnectError, RemoteCopyError, RemoteDeleteError }
