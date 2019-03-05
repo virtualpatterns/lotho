@@ -41,7 +41,7 @@ describe('remote', function () {
         }
       },
       'range': {
-        'progress':  {
+        'progressAsSecond': {
           'minimum': 0.0
         }
       }

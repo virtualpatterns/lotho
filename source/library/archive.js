@@ -205,7 +205,7 @@ archivePrototype._archive = function (stamp) {
       Log.trace({ parameter, option }, `ChildProcess.spawn('${Configuration.path.rsync}', parameter, option) ...`)
       let process = ChildProcess.spawn(Configuration.path.rsync, parameter, option)
 
-      let progress = Process.hrtime()
+      let progress = null
       let stdout = ''
       let stderr = ''
 
@@ -252,10 +252,12 @@ archivePrototype._archive = function (stamp) {
                 action = change
             }
 
-            let progressAsDuration = Configuration.conversion.toDuration(Process.hrtime(progress))
-            let minimumProgressAsDuration = Configuration.range.progress.minimum
+            if (Is.null(progress)) progress = Process.hrtime()
 
-            if (progressAsDuration >= minimumProgressAsDuration) {
+            let progressAsDuration = Configuration.conversion.toDuration(Process.hrtime(progress))
+            let minimumProgressAsSecond = Configuration.range.progressAsSecond.minimum
+
+            if (progressAsDuration.as('seconds') >= minimumProgressAsSecond) {
               Log.debug(`${action} '${Path.basename(path)}' ...`)
               progress = Process.hrtime()
             }

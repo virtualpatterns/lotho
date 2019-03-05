@@ -66,6 +66,7 @@ const configurationPrototype = {
       'scale': 'binary',
       'unit': 'B'
     },
+    'duration': 'hh\'h\' mm\'m\' ss.SSSS\'s\'',
     'schedule': '\'for\' DDDD \'at\' tt',
     'stamp': 'yyyy.LL.dd-HH.mm.ss.SSSZZZ'
   },
@@ -150,8 +151,8 @@ const configurationPrototype = {
     'remotePath': /^(.*):(.*)$/
   },
   'range': {
-    'progress':  {
-      'minimum': Duration.fromObject({ 'seconds': 5 }),
+    'progressAsSecond': {
+      'minimum': 5.0,
       'maximum': Infinity
     }
   },
@@ -199,7 +200,7 @@ const configurationPrototype = {
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'trace',
+    'logLevel': 'debug',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'option': {
       'lotho': { 
