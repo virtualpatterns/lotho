@@ -48,9 +48,10 @@ serverPrototype.onStarted = function (stamp) {
 
 }
 
-serverPrototype.onFinished = function () {
+serverPrototype.onFinished = function (duration) {
 
   try {
+    this.archive.option.lastDuration = duration
     this.archive.option.currentStamp = null
   }
   catch (error) {
@@ -119,6 +120,8 @@ Server.createHandler = function (archive, prototype = serverPrototype) {
   Property.set(archive.option, 'server.address', Property.get(archive.option, 'server.address', Configuration.server.address))
   Property.set(archive.option, 'server.port', Property.get(archive.option, 'server.port', Configuration.server.port))
   
+  archive.option.lastStamp = null
+  archive.option.lastDuration = null
   archive.option.currentStamp = null
   archive.option.lastResult = null
   archive.option.lastError = null

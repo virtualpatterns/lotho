@@ -67,7 +67,7 @@ const configurationPrototype = {
       'unit': 'B'
     },
     'duration': 'hh\'h\' mm\'m\' ss.SSSS\'s\'',
-    'schedule': '\'for\' DDDD \'at\' tt',
+    'schedule': 'DDD \'at\' t',
     'stamp': 'yyyy.LL.dd-HH.mm.ss.SSSZZZ'
   },
   'isPublished': true,

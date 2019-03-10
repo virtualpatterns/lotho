@@ -72,7 +72,7 @@ remotePrototype.copyExpired = function (previous, next) {
     let previousPath = `${targetPath}${separator}${previous.toFormat(Configuration.format.stamp)}`
     let nextPath = `${targetPath}${separator}${next.toFormat(Configuration.format.stamp)}`
   
-    Log.debug(`Copying to '${Path.basename(nextPath)}' ...`)
+    // Log.debug(`Copying to '${Path.basename(nextPath)}' ...`)
 
     Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}${separator}" "${nextPath}"', (error, stream) => { ... })`)
     this.connection.client.exec(`cp -Rnpv "${previousPath}${separator}" "${nextPath}"`, (error, stream) => {

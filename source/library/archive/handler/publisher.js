@@ -43,8 +43,6 @@ const publisherPrototype = Object.create(handlerPrototype)
 //       Log.trace(data, 'SNS.publish(option)')
 //     }
   
-//     Log.debug(`${Configuration.isPublished ? 'Published' : 'Unpublished'}: ${option.Subject}\n\n${option.Message}\n`)
-  
 //     handlerPrototype.onScheduled.call(this)
 
 //   }
@@ -82,8 +80,6 @@ const publisherPrototype = Object.create(handlerPrototype)
 //       Log.trace(data, 'SNS.publish(option)')
 //     }
 
-//     Log.debug(`${isPublished ? 'Published' : 'Unpublished'}: ${option.Subject}\n\n${option.Message}\n`)
-
 //     handlerPrototype.onSucceeded.call(this, result)
 
 //   }
@@ -107,8 +103,6 @@ publisherPrototype.onFailed = async function (error) {
       let data = await this.service.publish(option).promise()
       Log.trace(data, 'SNS.publish(option)')
     }
-  
-    Log.debug(`${Configuration.isPublished ? 'Published' : 'Unpublished'}: ${option.Subject}\n\n${option.Message}\n`)
   
     handlerPrototype.onFailed.call(this, error)
   
@@ -134,7 +128,7 @@ publisherPrototype.onFailed = async function (error) {
 //       Log.trace(data, 'SNS.publish(option)')
 //     }
   
-//     Log.debug(`${Configuration.isPublished ? 'Published' : 'Unpublished'}: ${option.Subject}`)
+//     Log.debug(`${Configuration.isPublished ? 'Published' : 'Unpublished'} '${option.Subject}'`)
   
 //     handlerPrototype.onUnscheduled.call(this)
   

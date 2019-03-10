@@ -22,6 +22,7 @@ Status.createRoute = function (server, archive) {
 
       let memory = Process.memoryUsage()
 
+      let lastDuration = Is.not.null(archive.option.lastDuration) ? archive.option.lastDuration.toFormat(Configuration.format.duration) : '(not archived)'
       let currentStamp = Is.not.null(archive.option.currentStamp) ? archive.option.currentStamp.toFormat(Configuration.format.stamp) : '(not started)'
 
       let lastResult = null
@@ -65,6 +66,7 @@ Status.createRoute = function (server, archive) {
           'total': Format(memory.heapTotal, Configuration.format.byte),
           'used': Format(memory.heapUsed, Configuration.format.byte)
         },
+        'lastDuration': lastDuration,
         'lastError': lastError,
         'lastResult': lastResult,
         'name': archive.option.name,

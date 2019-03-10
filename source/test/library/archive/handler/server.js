@@ -1,4 +1,5 @@
 import { assert as Assert } from 'chai'
+import { Duration } from 'luxon'
 import Request from 'axios'
 
 import Configuration from '../../../../configuration'
@@ -34,6 +35,7 @@ const STATUS_SCHEMA = {
       'required': [ 'total', 'used' ],
       'additionalProperties': false
     },
+    'lastDuration': { 'type': 'string' },
     'lastError': {
       'oneOf': [
         { 'type': 'string' },
@@ -359,7 +361,7 @@ describe('server', function () {
 
       before(async function() {
         await server.onScheduled()
-        await server.onFinished()
+        await server.onFinished(Duration.fromObject({ 'minutes': 10 }))
       })
 
       describe('/api/status', function () {
@@ -384,8 +386,8 @@ describe('server', function () {
   
       })
   
-      after(async function() {
-        await server.onUnscheduled()
+      after(function() {
+        return server.onUnscheduled()
       })
       
     })

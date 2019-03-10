@@ -34,6 +34,9 @@ archivePrototype.startSchedule = async function () {
         catch (error) {
           Log.error(error, 'catch (error) { ... }')
         }
+        finally {
+          if (Is.not.null(this.getNextSchedule())) Log.debug(`Scheduled '${this.option.name}' for ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+        }
       
       })
   
@@ -52,8 +55,8 @@ archivePrototype.startSchedule = async function () {
         this.job.start()
         this.onScheduled()
 
-        Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
-         
+        Log.debug(`Scheduled '${this.option.name}' for ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+
       }
       catch (error) {
 
@@ -80,6 +83,8 @@ archivePrototype.startSchedule = async function () {
 archivePrototype.stopSchedule = async function () {
 
   if (Is.not.null(this.job)) { 
+
+    if (Is.not.null(this.timer)) clearTimeout(this.timer)
 
     this.job.stop()
     this.job = null
@@ -112,6 +117,7 @@ archivePrototype.onSchedule = async function () {
   try {
 
     let stamp = Configuration.now()
+    let start = Process.hrtime()
 
     this.onStarted(stamp)
 
@@ -127,29 +133,26 @@ archivePrototype.onSchedule = async function () {
   
       }
       catch (error) {
+        Log.error(error, `Archive.archive('${stamp.toFormat(Configuration.format.stamp)}')`)
         this.onFailed(error)
       }
   
     }
     finally {
-      this.onFinished()
+      this.onFinished(Configuration.conversion.toDuration(Process.hrtime(start)))
     }
 
   }
   finally {
-
-    if (Is.not.null(this.getNextSchedule())) Log.debug(`Scheduled '${this.option.name}' ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
-
     Log.trace(`FileSystem.remove('${Path.basename(lockPath)}')`)
     await FileSystem.remove(lockPath)
-
   }
 
 }
 
 archivePrototype.archive = async function (stamp = Configuration.now()) {
 
-  Log.debug(`Archiving '${this.option.name}' ...`)
+  Log.debug(`Archiving '${this.option.name}' on ${Configuration.now().toFormat(Configuration.format.schedule)} ...`)
 
   let includePath = Path.join(Configuration.path.home, `archive.${this.id}.include`)
   let include = this.option.path.include.reduce((accumulator, path) => `${accumulator}${path}\n`, '')
@@ -352,8 +355,8 @@ archivePrototype.onFailed = function (error) {
   this.emit('failed', error)
 }
 
-archivePrototype.onFinished = function () {
-  this.emit('finished')
+archivePrototype.onFinished = function (duration) {
+  this.emit('finished', duration)
 }
 
 archivePrototype.onUnscheduled = function () {
