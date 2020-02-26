@@ -1,4 +1,4 @@
-import { Log, Path } from '@virtualpatterns/mablung'
+import { Log, Path, Process } from '@virtualpatterns/mablung'
 import _ProcessManager from 'pm2'
 import Sanitize from 'sanitize-filename'
 import Utility from 'util'
@@ -24,7 +24,10 @@ processManagerPrototype.startArchive = async function () {
 
     let option = Configuration.getOption({
       'name': this.option.name,
-      'script': Configuration.path.start,
+      // 'script': Path.basename(Configuration.path.start),
+      // 'cwd': Path.dirname(Configuration.path.start),
+      'script': Path.relative(Process.cwd(), Configuration.path.start),
+      'cwd': Process.cwd(),
       'args': Configuration.getParameter({
         '--configuration-path': Configuration.path.configuration,
         '--log-level': Configuration.logLevel,

@@ -1,6 +1,6 @@
 import { assert as Assert } from 'chai'
 import { Duration, Interval } from 'luxon'
-import { FileSystem } from '@virtualpatterns/mablung'
+import { FileSystem, Log } from '@virtualpatterns/mablung'
 
 import Configuration from '../../../configuration'
 import _Remote from '../../../library/archive/remote'
@@ -321,7 +321,7 @@ describe('remote', function () {
                 await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
                 await FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
   
-                result = await Remote.createArchive(option).archive(stamp)
+                result = await (Remote.createArchive(option).archive(stamp))
                 value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
        
               })
@@ -452,7 +452,7 @@ describe('remote', function () {
           let toStartOfYear = Interval.fromDateTimes(stamp.minus(Duration.fromObject({ 'years': 3 })), stamp).divideEqually(2)
           previous = stamp.minus(toStartOfYear[0].toDuration())
           previousAsString = previous.toFormat(Configuration.format.stamp)
-    
+
           let rootPath = 'resource/test/library/archive/empty'
 
           targetPath = `${rootPath}/target`
@@ -479,11 +479,18 @@ describe('remote', function () {
             let toEndOfYear = Interval.fromDateTimes(previous, previous.endOf('year')).divideEqually(2)
             next = previous.plus(toEndOfYear[0].toDuration())
             nextAsString = next.toFormat(Configuration.format.stamp)
-          
+
             await FileSystem.outputJson(`${targetPath}/${previousAsString}/abc or def.json`, { 'value': 'abc' }, { 'encoding': 'utf-8', 'spaces': 2 })
             await FileSystem.ensureDir(`${targetPath}/${nextAsString}`)
   
-            result = await Remote.createArchive(option).archive(stamp)
+            Log.debug(`${previousAsString}/abc or def.json exists is ${await FileSystem.pathExists(`${targetPath}/${previousAsString}/abc or def.json`)}`)
+
+            result = await (Remote.createArchive(option).archive(stamp))
+
+            Log.debug(`${previousAsString} exists is ${await FileSystem.pathExists(`${targetPath}/${previousAsString}`)}`)
+            Log.debug(`${previousAsString}/abc or def.json exists is ${await FileSystem.pathExists(`${targetPath}/${previousAsString}/abc or def.json`)}`)
+            Log.debug(`${nextAsString}/abc or def.json exists is ${await FileSystem.pathExists(`${targetPath}/${nextAsString}/abc or def.json`)}`)
+
             value = (await FileSystem.readJson(`${targetPath}/${nextAsString}/abc or def.json`, { 'encoding': 'utf-8' })).value
     
           })

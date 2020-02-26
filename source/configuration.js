@@ -3,7 +3,7 @@ import Is from '@pwn/is'
 import Merge from 'deepmerge'
 import Omit from 'object.omit'
 import OS from 'os'
-import { FileSystem, Path } from '@virtualpatterns/mablung'
+import { FileSystem, Path, Process } from '@virtualpatterns/mablung'
 import Redact from 'fast-redact'
 
 const [ COMPUTER_NAME ] = OS.hostname().match(/^[^.]+/)
@@ -41,9 +41,7 @@ const configurationPrototype = {
       }
     ],
     'option': {
-      'rsync': { 
-        'cwd': '/usr/local/bin'
-      },
+      'rsync': {},
       'SNS': {
         'service': {
           'credentials': {
@@ -97,7 +95,9 @@ const configurationPrototype = {
       ],
       'censor': '**********'
     },
-    'rsync': {},
+    'rsync': { 
+      'cwd': Process.cwd(),
+    },
     'SFTP': {},
     'SNS': {
       'service': {
@@ -119,6 +119,7 @@ const configurationPrototype = {
       '--delete': true,
       '--delete-excluded': true,
       '--executability': true,
+      // '--extended-attributes': true,
       '--group': true,
       '--itemize-changes': true,
       '--owner': true,
@@ -200,16 +201,40 @@ const configurationPrototype = {
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-task.log')
   },
   'test': {
-    'logLevel': 'debug',
+    'logLevel': 'trace',
     'logPath': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log'),
     'option': {
       'lotho': { 
-        'silent': true 
+        'cwd': Process.cwd(),
+        'execArgv': Process.execArgv.map((argument) => {
+
+          let pattern = /--inspect-brk=(\d+)/i
+          let match = null
+        
+          let port = null
+        
+          if (Is.not.null(match = pattern.exec(argument))) {
+        
+            let [ , portAsString ] = match
+            port = parseInt(portAsString)
+        
+            return `--inspect=${port + 1}`
+
+          }
+          else {
+            return argument
+          }
+
+        }),
+        'silent': true
       },
       'request': {}
     },
     'parameter': {
-      'lotho': {}
+      'lotho': {
+        '--log-level': 'trace',
+        '--log-path': Path.join(HOME_PATH, 'Library', 'Logs', 'lotho', 'lotho-test.log')
+      }
     },
     'path': {
       'lotho': Path.join('distributable', 'lotho.js')
@@ -250,10 +275,12 @@ Configuration.getParameter = function (...parameter) {
 }
 
 Configuration.toParameter = function (parameter) {
+
   return Is.array(parameter) ? parameter.reduce((accumulator, parameter) => { 
     accumulator[parameter] = true 
     return accumulator
   }, {}) : parameter
+  
 }
 
 Configuration.getOption = function (...option) {

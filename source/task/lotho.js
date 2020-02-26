@@ -45,6 +45,7 @@ task('build', [ 'clean', 'count', 'lint' ], { 'async': true }, () => {
   Jake.exec([
     ...[ 'library', 'sandbox', 'test' ].map((folderName) => `babel --config-file ./distributable/babel.configuration source/${folderName} --copy-files --out-dir distributable/${folderName} --source-maps`),
     ...[ 'lotho.js' ].map((fileName) => `babel --config-file ./distributable/babel.configuration source/${fileName} --out-file distributable/${fileName} --source-maps`),
+    'chmod +x distributable/lotho.js',
     'npm --no-git-tag-version version prerelease'
   ], { 'printStderr': true, 'printStdout': false }, () => complete())
 })

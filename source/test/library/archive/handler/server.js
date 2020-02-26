@@ -128,7 +128,7 @@ describe('server', function () {
   let request = null
 
   before(function () {
-    request = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
+    request = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14568' }, Configuration.test.option.request))
   })
 
   describe('(with an empty source)', function () {
@@ -149,7 +149,10 @@ describe('server', function () {
           'source': `${rootPath}/source`,
           'target': `${rootPath}/target`
         },
-        'schedule': '*/5 * * * * *'
+        'schedule': '*/5 * * * * *',
+        'server': {
+          'port': 14568
+        }
       }
   
       archive = Local.createArchive(option)

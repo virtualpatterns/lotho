@@ -8,7 +8,10 @@
         "exclude": [],
         "include": []
       },
-      "schedule": "*/5 * * * * *"
+      "schedule": "*/5 * * * * *",
+      "server": {
+        "port": 14568
+      }
     }
   ],
   "isPublished": false,

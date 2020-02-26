@@ -44,13 +44,15 @@ describe('lotho', function () {
   const Lotho = Object.create({})
   
   Lotho.startLotho = function (parameter = [], option = {}, prototype = lothoPrototype) {
-    Log.trace(parameter, 'Lotho.startLotho(parameter, prototype)')
+    Log.trace({ parameter, option }, 'Lotho.startLotho(parameter, option, prototype)')
   
     let lotho = Object.create(prototype)
 
     let _parameter = Configuration.getParameter(Configuration.test.parameter.lotho, parameter)
     let _option = Configuration.getOption(Configuration.test.option.lotho, option)
-  
+
+    Log.trace({ _parameter, _option }, `ChildProcess.fork('${Configuration.test.path.lotho}', _parameter, _option)`)
+
     lotho.process = ChildProcess.fork(Configuration.test.path.lotho, _parameter, _option)
     
     return lotho
@@ -66,17 +68,19 @@ describe('lotho', function () {
   }
   
   Lotho.run = function (parameter = [], option = {}) {
-    Log.trace({ parameter }, 'Lotho.startLotho(parameter, prototype)')
+    Log.trace({ parameter, option }, 'Lotho.run(parameter, option)')
 
     return new Promise((resolve) => {
 
       let _parameter = Configuration.getParameter(Configuration.test.parameter.lotho, parameter)
       let _option = Configuration.getOption(Configuration.test.option.lotho, option)
-        
+
+      Log.trace({ _parameter, _option }, `ChildProcess.fork('${Configuration.test.path.lotho}', _parameter, _option)`)
+
       ChildProcess
         .fork(Configuration.test.path.lotho, _parameter, _option)
         .once('exit', resolve)
-  
+
     })
   
   }
@@ -272,7 +276,7 @@ describe('lotho', function () {
         'run-schedule': Package.name
       })
 
-      request = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
+      request = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14568' }, Configuration.test.option.request))
 
       return Lotho.whenElapsed(5000)
 
@@ -335,9 +339,9 @@ describe('lotho', function () {
         pid1 = await processManager.getArchivePID('1')
         pid2 = await processManager.getArchivePID('2')
 
-        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
-        request15 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4568' }, Configuration.test.option.request))
-        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4569' }, Configuration.test.option.request))
+        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14568' }, Configuration.test.option.request))
+        request15 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14569' }, Configuration.test.option.request))
+        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14570' }, Configuration.test.option.request))
 
       })
   
@@ -417,8 +421,8 @@ describe('lotho', function () {
         pid1 = await processManager.getArchivePID('1')
         pid2 = await processManager.getArchivePID('2')
 
-        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4567' }, Configuration.test.option.request))
-        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:4569' }, Configuration.test.option.request))
+        request1 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14568' }, Configuration.test.option.request))
+        request2 = Request.create(Configuration.getOption({ 'baseURL': 'http://0.0.0.0:14570' }, Configuration.test.option.request))
 
       })
   

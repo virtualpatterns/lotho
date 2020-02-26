@@ -60,59 +60,64 @@ remotePrototype.getExpired = async function (current) {
 
 }
 
-remotePrototype.copyExpired = function (previous, next) {
+remotePrototype.copyExpired = async function (previous, next) {
 
-  return new Promise((resolve, reject) => {
+  let pattern = Configuration.pattern.remotePath
+  let match = pattern.exec(this.option.path.target)
+  
+  let [ , , targetPath ] = match
+  let separator = Remote.getSeparator(targetPath)
+  let previousPath = `${targetPath}${separator}${previous.toFormat(Configuration.format.stamp)}`
+  let nextPath = `${targetPath}${separator}${next.toFormat(Configuration.format.stamp)}`
+  
+  let items = await this.connection.list(previousPath)
 
-    let pattern = Configuration.pattern.remotePath
-    let match = pattern.exec(this.option.path.target)
+  for (let item of items) {
+
+    await new Promise((resolve, reject) => {
+
+      Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}${separator}${item.name}" "${nextPath}${separator}"', (error, stream) => { ... })`)
+      this.connection.client.exec(`cp -Rnpv "${previousPath}${separator}${item.name}" "${nextPath}${separator}"`, (error, stream) => {
+
+        if (error) {
+          Log.error(error, `SFTP.exec('cp -Rnpv "${previousPath}/${item.name}" "${nextPath}${separator}"'), (error, stream) => { ... })`)
+          reject(new RemoteCopyError(error))
+        }
+        else {
+
+          let stdout = ''
+          let stderr = ''
     
-    let [ , , targetPath ] = match
-    let separator = Remote.getSeparator(targetPath)
-    let previousPath = `${targetPath}${separator}${previous.toFormat(Configuration.format.stamp)}`
-    let nextPath = `${targetPath}${separator}${next.toFormat(Configuration.format.stamp)}`
-  
-    // Log.debug(`Copying to '${Path.basename(nextPath)}' ...`)
+          stream.stdout.on('data', (data) => {
+            stdout += data
+          })
+          
+          stream.stderr.on('data', (data) => {
+            stderr += data
+          })
 
-    Log.trace(`SFTP.exec('cp -Rnpv "${previousPath}${separator}" "${nextPath}"', (error, stream) => { ... })`)
-    this.connection.client.exec(`cp -Rnpv "${previousPath}${separator}" "${nextPath}"`, (error, stream) => {
+          stream.once('close', (code) => {
 
-      if (error) {
-        Log.error(error, `SFTP.exec('cp -Rnpv "${previousPath}/" "${nextPath}"'), (error, stream) => { ... })`)
-        reject(new RemoteCopyError(error))
-      }
-      else {
-
-        let stdout = ''
-        let stderr = ''
-  
-        stream.stdout.on('data', (data) => {
-          stdout += data
-        })
-        
-        stream.stderr.on('data', (data) => {
-          stderr += data
-        })
-
-        stream.once('close', (code) => {
-
-          if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
-
-          if ([ 0, 1 ].includes(code)) {
-            resolve()
-          }
-          else {
+            if (Is.not.emptyString(stdout)) Log.trace(`\n\n${stdout}`)
             if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
-            reject(new RemoteCopyError(stderr))
-          }
 
-        })
+            if ([ 0, 1 ].includes(code)) {
+              resolve()
+            }
+            else {
+              if (Is.not.emptyString(stderr)) Log.error(`\n\n${stderr}`)
+              reject(new RemoteCopyError(stderr))
+            }
 
-      }
+          })
+
+        }
+
+      })
 
     })
 
-  })
+  }
 
 }
 

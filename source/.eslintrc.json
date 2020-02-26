@@ -9,13 +9,15 @@
     "sourceType": "module"
   },
   "rules": {
-    "arrow-parens": [ "error", "always" ],
-    "comma-dangle": [ "error", "never" ],
+    "arrow-parens": "error",
+    "comma-dangle": "off",
     "indent": [ "error", 2, { "SwitchCase": 1 } ],
     "linebreak-style": [ "error", "unix" ],
-    "no-console": [ "warn" ],
-    "no-unused-vars": [ "warn" ],
+    "no-async-promise-executor": "off",
+    "no-console": "warn",
+    "no-prototype-builtins": "off",
+    "no-unused-vars": "warn",
     "quotes": [ "error", "single" ],
-    "semi": [ "error", "never" ]
+    "semi": "off"
   }
 }

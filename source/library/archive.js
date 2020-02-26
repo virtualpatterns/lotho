@@ -5,6 +5,7 @@ import EventEmitter from 'events'
 import { FileSystem, Log, Path, Process } from '@virtualpatterns/mablung'
 import Property from 'object-path'
 import UUID from 'uuid/v4'
+import Wake from 'sleeptime'
 
 import Configuration from '../configuration'
 import Is from './utility/is'
@@ -39,7 +40,23 @@ archivePrototype.startSchedule = async function () {
         }
       
       })
-  
+
+      this.wake = new Wake((duration) => {
+
+        Log.debug(Configuration.line)
+        Log.debug(`Wake after ${Configuration.conversion.toDuration([ 0, duration * 1000000 ]).toFormat(Configuration.format.duration)}`)
+        Log.debug(Configuration.line)
+
+        // this.stopSchedule()
+        // this.startSchedule()
+        
+        this.job.stop()
+        this.job.start()
+
+        Log.debug(`Scheduled '${this.option.name}' for ${this.getNextSchedule().toFormat(Configuration.format.schedule)}`)
+
+      })
+
       Process.once('SIGINT', this.onSIGINT = () => {
         Log.debug('Process.once(\'SIGINT\', () => { ... })')
         this.stopSchedule()
@@ -84,10 +101,13 @@ archivePrototype.stopSchedule = async function () {
 
   if (Is.not.null(this.job)) { 
 
-    if (Is.not.null(this.timer)) clearTimeout(this.timer)
+    // if (Is.not.null(this.timer)) clearTimeout(this.timer)
 
     this.job.stop()
     this.job = null
+
+    this.wake.stop()
+    this.wake = null
 
     Process.off('SIGTERM', this.onSIGTERM)
     this.onSIGTERM = null
